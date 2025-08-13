@@ -30,7 +30,7 @@ export default function ImportExport({ db, setDb }){
     <div style={{display:'flex', gap:8}}>
       <input ref={fileRef} type="file" accept="application/json" style={{display:'none'}} onChange={onImport} />
       <button className="btn" onClick={()=>fileRef.current?.click()}>Import</button>
-      <button className="btn" onClick={onExport}>Export</button>
+      <button className="btn" onClick={onExport}>Eksport</button>
     </div>
   )
 }
