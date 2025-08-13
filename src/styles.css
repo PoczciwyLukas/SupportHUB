@@ -28,6 +28,6 @@ table { width:100%; border-collapse: collapse; font-size: 14px; }
 th, td { border-bottom:1px solid #e2e8f0; padding: 8px 12px; text-align: left; vertical-align: top; }
 th { font-weight: 500; color:#64748b; }
 .badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-size:12px; background:#e2e8f0; color:#334155; }
-.row-actions { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+.row-actions { display:flex; flex-wrap:wrap; gap:6px; }
 .danger-text { color:#b91c1c; }
 .dim { color:#64748b; }
