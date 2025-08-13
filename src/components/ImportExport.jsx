@@ -25,6 +25,8 @@ export default function ImportExport({ db, setDb }){
       } catch(err){ alert("Błąd importu: " + err.message) }
     }
     reader.readAsText(file)
+    // reset input so importing the same file again triggers change event
+    e.target.value = ""
   }
   return (
     <div style={{display:'flex', gap:8}}>
