@@ -4,9 +4,11 @@ import { DEFAULT_STATUSES, JOB_TYPES, ensureUrlOrSearch, fmtPLN, isOverdue, toda
 export default function JobsPanel({ db, setDb, companyId }){
   const emptyForm = { orderNumber:"", serialNumber:"", issueDesc:"", incomingTracking:"", outgoingTracking:"", actionsDesc:"", status:"nowe", jobType:"hub", dueDate:"", shipIn:"", shipOut:"", insIn:"", insOut:"" }
   const [form, setForm] = useState(emptyForm)
+  const [formMode, setFormMode] = useState('new')
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
+  const [kindFilter, setKindFilter] = useState("all")
   const [editId, setEditId] = useState(null)
   const [usageOpen, setUsageOpen] = useState(false)
   const [invUsage, setInvUsage] = useState([])
@@ -26,26 +28,28 @@ export default function JobsPanel({ db, setDb, companyId }){
     let arr=[...jobs]
     if(statusFilter!=="all") arr=arr.filter(j=>j.status===statusFilter)
     if(typeFilter!=="all") arr=arr.filter(j=>(j.jobType||"hub")===typeFilter)
+    if(kindFilter!=="all") arr=arr.filter(j=>(j.kind||"new")===kindFilter)
     if(search.trim()){
       const q=search.toLowerCase()
       arr=arr.filter(j => [j.orderNumber, j.serialNumber, j.issueDesc, j.actionsDesc, j.incomingTracking, j.outgoingTracking].filter(Boolean).some(v=>String(v).toLowerCase().includes(q)))
     }
     return arr.sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt))
-  }, [jobs, search, statusFilter, typeFilter])
+  }, [jobs, search, statusFilter, typeFilter, kindFilter])
 
-  function reset(){ setForm(emptyForm); setEditId(null) }
+  function reset(){ setForm(emptyForm); setEditId(null); setFormMode('new') }
   function save(){
     if(!form.orderNumber.trim()) return alert("Podaj numer zlecenia")
     const base = {
       companyId,
       orderNumber: form.orderNumber.trim(),
       serialNumber: form.serialNumber.trim(),
-      issueDesc: form.issueDesc.trim(),
+      issueDesc: formMode==='upgrade'?"":form.issueDesc.trim(),
       incomingTracking: form.incomingTracking.trim(),
       outgoingTracking: form.outgoingTracking.trim(),
       actionsDesc: form.actionsDesc.trim(),
       status: form.status,
       jobType: form.jobType,
+      kind: formMode,
       dueDate: form.dueDate || "",
       shipIn: Number(form.shipIn||0), shipOut: Number(form.shipOut||0),
       insIn: Number(form.insIn||0), insOut: Number(form.insOut||0),
@@ -59,6 +63,7 @@ export default function JobsPanel({ db, setDb, companyId }){
   }
   function edit(j){
     setEditId(j.id)
+    setFormMode(j.kind === 'upgrade' ? 'upgrade' : 'new')
     setForm({
       orderNumber: j.orderNumber, serialNumber: j.serialNumber, issueDesc: j.issueDesc,
       incomingTracking: j.incomingTracking||"", outgoingTracking: j.outgoingTracking||"",
@@ -98,14 +103,22 @@ export default function JobsPanel({ db, setDb, companyId }){
   return (
     <div className="layout">
       <div className="card">
-        <div className="header">{editId ? "Edytuj zlecenie" : "Nowe zlecenie"}</div>
+        <div className="header" style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center'}}>
+          <button className={`btn ${formMode==='new' ? 'primary' : ''}`} onClick={()=>setFormMode('new')}>Nowe zlecenie</button>
+          <button className={`btn ${formMode==='upgrade' ? 'primary' : ''}`} onClick={()=>setFormMode('upgrade')}>Upgrade</button>
+          {editId && <div style={{marginLeft:'auto'}}>Edytuj zlecenie</div>}
+        </div>
         <div className="body">
           <div className="label">Numer zlecenia *</div>
           <input className="input" value={form.orderNumber} onChange={e=>setForm({...form, orderNumber:e.target.value})} placeholder="np. ZL-2025-001"/>
           <div className="label" style={{marginTop:10}}>Numer seryjny urządzenia</div>
           <input className="input" value={form.serialNumber} onChange={e=>setForm({...form, serialNumber:e.target.value})} placeholder="np. SN123456"/>
-          <div className="label" style={{marginTop:10}}>Opis usterki</div>
-          <textarea className="input" value={form.issueDesc} onChange={e=>setForm({...form, issueDesc:e.target.value})} placeholder="Co się dzieje z urządzeniem?" />
+          {formMode==='new' && (
+            <>
+              <div className="label" style={{marginTop:10}}>Opis usterki</div>
+              <textarea className="input" value={form.issueDesc} onChange={e=>setForm({...form, issueDesc:e.target.value})} placeholder="Co się dzieje z urządzeniem?" />
+            </>
+          )}
           <div className="grid col-2">
             <div>
               <div className="label">Tracking (przychodzący)</div>
@@ -122,8 +135,8 @@ export default function JobsPanel({ db, setDb, companyId }){
               </div>
             </div>
           </div>
-          <div className="label" style={{marginTop:10}}>Opis czynności wykonanych</div>
-          <textarea className="input" value={form.actionsDesc} onChange={e=>setForm({...form, actionsDesc:e.target.value})} placeholder="Co zostało zrobione?" />
+          <div className="label" style={{marginTop:10}}>{formMode==='upgrade' ? "Opis upgrade'u" : 'Opis czynności wykonanych'}</div>
+          <textarea className="input" value={form.actionsDesc} onChange={e=>setForm({...form, actionsDesc:e.target.value})} placeholder={formMode==='upgrade' ? 'Na czym polega upgrade?' : 'Co zostało zrobione?'} />
           <div className="grid col-2">
             <div>
               <div className="label">Status</div>
@@ -164,14 +177,14 @@ export default function JobsPanel({ db, setDb, companyId }){
             </div>
           </div>
           <div style={{display:'flex', gap:8, marginTop:12}}>
-            <button className="btn primary" onClick={save}>{editId ? "Zapisz zmiany" : "Dodaj zlecenie"}</button>
+            <button className="btn primary" onClick={save}>{editId ? "Zapisz zmiany" : formMode==='upgrade' ? 'Dodaj upgrade' : 'Dodaj zlecenie'}</button>
             {editId && <button className="btn" onClick={reset}>Anuluj</button>}
           </div>
         </div>
       </div>
 
       <div>
-        <div className="card">
+          <div className="card">
           <div className="body" style={{display:'flex', gap:8, flexWrap:'wrap'}}>
             <div style={{position:'relative', flex:1, minWidth:220}}>
               <input className="input" placeholder="Szukaj (nr, SN, opis...)" value={search} onChange={e=>setSearch(e.target.value)} />
@@ -184,6 +197,11 @@ export default function JobsPanel({ db, setDb, companyId }){
               <option value="all">Wszystkie typy</option>
               {JOB_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
+            <select className="input" value={kindFilter} onChange={e=>setKindFilter(e.target.value)} style={{width:220}}>
+              <option value="all">Wszystkie rodzaje</option>
+              <option value="new">Nowe</option>
+              <option value="upgrade">Upgrade</option>
+            </select>
           </div>
         </div>
 
@@ -193,7 +211,7 @@ export default function JobsPanel({ db, setDb, companyId }){
             <table>
               <thead>
                 <tr>
-                  <th>Numer</th><th>SN</th><th>Typ</th><th>SLA</th><th>Status</th><th>Utworzono</th><th>Akcje</th>
+                  <th>Numer</th><th>SN</th><th>Rodzaj</th><th>Typ</th><th>SLA</th><th>Status</th><th>Utworzono</th><th>Akcje</th>
                 </tr>
               </thead>
               <tbody>
@@ -201,6 +219,7 @@ export default function JobsPanel({ db, setDb, companyId }){
                   <tr key={j.id}>
                     <td style={{fontWeight:600}}>{j.orderNumber}</td>
                     <td>{j.serialNumber}</td>
+                    <td><span className="badge">{j.kind==='upgrade'?'Upgrade':'Nowe'}</span></td>
                     <td><span className="badge">{JOB_TYPES.find(t=>t.value===j.jobType)?.label || j.jobType}</span></td>
                     <td>{j.dueDate ? <span className={isOverdue(j.dueDate) && !["zakonczone","odeslane"].includes(j.status) ? "danger-text":""}>{new Date(j.dueDate).toLocaleDateString()}</span> : "—"}</td>
                     <td>{DEFAULT_STATUSES.find(s=>s.value===j.status)?.label || j.status}</td>
@@ -215,7 +234,7 @@ export default function JobsPanel({ db, setDb, companyId }){
                     </td>
                   </tr>
                 ))}
-                {shown.length===0 && <tr><td colSpan="7" style={{textAlign:'center', padding:'16px', color:'#64748b'}}>Brak zleceń spełniających kryteria</td></tr>}
+                {shown.length===0 && <tr><td colSpan="8" style={{textAlign:'center', padding:'16px', color:'#64748b'}}>Brak zleceń spełniających kryteria</td></tr>}
               </tbody>
             </table>
           </div>
@@ -259,6 +278,7 @@ function JobDetails({ job, total }){
           <div><strong>SN:</strong> {job.serialNumber || "—"}</div>
           <div><strong>Usterka:</strong> {job.issueDesc || "—"}</div>
           <div><strong>Czynności:</strong> {job.actionsDesc || "—"}</div>
+          <div><strong>Rodzaj:</strong> {job.kind === 'upgrade' ? 'Upgrade' : 'Nowe'}</div>
           <div><strong>Typ:</strong> {JOB_TYPES.find(t=>t.value===job.jobType)?.label || job.jobType}</div>
           <div><strong>Termin (SLA):</strong> {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : "—"}</div>
         </div>

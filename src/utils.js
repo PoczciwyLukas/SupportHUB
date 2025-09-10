@@ -11,6 +11,7 @@ export const DEFAULT_STATUSES = [
 export const JOB_TYPES = [
   { value: "hub", label: "Naprawa w hubie" },
   { value: "onsite", label: "Naprawa u klienta" },
+  { value: "upgrade", label: "Upgrade" },
 ]
 
 export const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id_" + Date.now() + "_" + Math.random().toString(36).slice(2,8))
@@ -34,8 +35,8 @@ export function loadDb(withDemo=false){
   const demo = {
     companies: [c1, c2],
     jobs: [
-      { id: uid(), companyId: c1.id, orderNumber: "ZL-2025-001", serialNumber:"SN12345", issueDesc:"Nie włącza się", incomingTracking:"DHL-123", outgoingTracking:"", actionsDesc:"Diagnoza zasilania", status:"wtrakcie", jobType:"hub", dueDate: new Date().toISOString().slice(0,10), shipIn:85, shipOut:95, insIn:12, insOut:15, createdAt: todayISO(), updatedAt: todayISO(), inventoryUsed: []},
-      { id: uid(), companyId: c1.id, orderNumber: "ZL-2025-002", serialNumber:"SN55555", issueDesc:"Brak obrazu", incomingTracking:"INPOST-XYZ", outgoingTracking:"", actionsDesc:"Wymiana kondensatora", status:"czeka", jobType:"onsite", dueDate:"", shipIn:0, shipOut:0, insIn:0, insOut:0, createdAt: todayISO(), updatedAt: todayISO(), inventoryUsed: []},
+      { id: uid(), companyId: c1.id, orderNumber: "ZL-2025-001", serialNumber:"SN12345", issueDesc:"Nie włącza się", incomingTracking:"DHL-123", outgoingTracking:"", actionsDesc:"Diagnoza zasilania", status:"wtrakcie", jobType:"hub", kind:"new", dueDate: new Date().toISOString().slice(0,10), shipIn:85, shipOut:95, insIn:12, insOut:15, createdAt: todayISO(), updatedAt: todayISO(), inventoryUsed: []},
+      { id: uid(), companyId: c1.id, orderNumber: "ZL-2025-002", serialNumber:"SN55555", issueDesc:"Brak obrazu", incomingTracking:"INPOST-XYZ", outgoingTracking:"", actionsDesc:"Wymiana kondensatora", status:"czeka", jobType:"onsite", kind:"new", dueDate:"", shipIn:0, shipOut:0, insIn:0, insOut:0, createdAt: todayISO(), updatedAt: todayISO(), inventoryUsed: []},
     ],
     inventory: [
       { id: uid(), companyId: c1.id, sku:"KND-100", name:"Kondensator 100uF", qty:12, location:"A1", minQty:5, toReturnUSA:false, createdAt: todayISO()},
@@ -51,6 +52,7 @@ export function migrate(data){
   const jobs = (data.jobs||[]).map(j => ({
     ...j,
     jobType: j.jobType || "hub",
+    kind: j.kind || "new",
     shipIn: Number(j.shipIn||0), shipOut: Number(j.shipOut||0),
     insIn: Number(j.insIn||0), insOut: Number(j.insOut||0),
     inventoryUsed: (j.inventoryUsed||[]).map(u => ({...u, qty: Number(u.qty||0), disposition: u.disposition || "keep"})),
