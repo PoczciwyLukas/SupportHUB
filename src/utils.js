@@ -59,7 +59,9 @@ export function migrate(data){
     inventoryUsed: (j.inventoryUsed||[]).map(u => ({
       ...u,
       qty: Number(u.qty||0),
-      disposition: u.disposition
+      disposition: ["dispose", "renew", "return"].includes(u.disposition)
+        ? u.disposition
+        : "renew",
     })),
   }))
   const inventory = (data.inventory||[]).map(({ toReturnUSA, ...i }) => ({ ...i }))
