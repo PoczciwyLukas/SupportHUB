@@ -1,6 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { DEFAULT_STATUSES, JOB_TYPES, ensureUrlOrSearch, fmtPLN, isOverdue, todayISO, uid } from '../utils'
 
+const DISPOSITION_LABELS = {
+  keep: 'pozostaje u mnie',
+  dispose: 'utylizacja',
+  renew: 'odnowienie',
+  return: 'odesłanie do producenta',
+}
+
 export default function JobsPanel({ db, setDb, companyId }){
   const emptyForm = { orderNumber:"", serialNumber:"", issueDesc:"", incomingTracking:"", outgoingTracking:"", actionsDesc:"", status:"nowe", jobType:"hub", dueDate:"", shipIn:"", shipOut:"", insIn:"", insOut:"" }
   const [form, setForm] = useState(emptyForm)
@@ -286,7 +293,7 @@ function JobDetails({ job, total }){
       ) : (
         <ul style={{paddingLeft:18, margin:0}}>
           {job.inventoryUsed.map((u, idx) => (
-            <li key={idx}>{u.name} (SKU: {u.sku}) — {u.qty} szt. — los: {u.disposition==="dispose"?"utylizacja":"pozostaje u mnie"}</li>
+            <li key={idx}>{u.name} (SKU: {u.sku}) — {u.qty} szt. — los: {DISPOSITION_LABELS[u.disposition] || u.disposition}</li>
           ))}
         </ul>
       )}
@@ -329,6 +336,8 @@ function InventoryUsageEditor({ usage, setUsage, inventory }){
           <select className="input" value={disp} onChange={e=>setDisp(e.target.value)}>
             <option value="keep">Pozostaje u mnie</option>
             <option value="dispose">Utylizacja</option>
+            <option value="renew">Odnowienie</option>
+            <option value="return">Odesłanie do producenta</option>
           </select>
         </div>
         <div><button className="btn primary" onClick={add} style={{width:'100%'}}>Dodaj</button></div>
@@ -343,7 +352,7 @@ function InventoryUsageEditor({ usage, setUsage, inventory }){
                 <tr><td colSpan="5" style={{textAlign:'center', padding:'12px'}} className="dim">Nic nie dodano</td></tr>
               ) : usage.map((u, idx) => (
                 <tr key={idx}>
-                  <td>{u.name}</td><td>{u.sku}</td><td>{u.qty}</td><td>{u.disposition==="dispose"?"utylizacja":"pozostaje u mnie"}</td>
+                  <td>{u.name}</td><td>{u.sku}</td><td>{u.qty}</td><td>{DISPOSITION_LABELS[u.disposition] || u.disposition}</td>
                   <td style={{textAlign:'right'}}><button className="btn ghost" onClick={()=>removeLine(u.itemId, u.disposition)}>Usuń</button></td>
                 </tr>
               ))}
