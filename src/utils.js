@@ -11,6 +11,7 @@ export const DEFAULT_STATUSES = [
 export const JOB_TYPES = [
   { value: "hub", label: "Naprawa w hubie" },
   { value: "onsite", label: "Naprawa u klienta" },
+  { value: "upgrade", label: "Upgrade" },
 ]
 
 export const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id_" + Date.now() + "_" + Math.random().toString(36).slice(2,8))
