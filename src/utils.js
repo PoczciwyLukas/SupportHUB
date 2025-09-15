@@ -39,8 +39,8 @@ export function loadDb(withDemo=false){
       { id: uid(), companyId: c1.id, orderNumber: "ZL-2025-002", serialNumber:"SN55555", issueDesc:"Brak obrazu", incomingTracking:"INPOST-XYZ", outgoingTracking:"", actionsDesc:"Wymiana kondensatora", status:"czeka", jobType:"onsite", dueDate:"", shipIn:0, shipOut:0, insIn:0, insOut:0, createdAt: todayISO(), updatedAt: todayISO(), inventoryUsed: []},
     ],
     inventory: [
-      { id: uid(), companyId: c1.id, sku:"KND-100", name:"Kondensator 100uF", qty:12, location:"A1", minQty:5, toReturnUSA:false, createdAt: todayISO()},
-      { id: uid(), companyId: c1.id, sku:"PSU-12V", name:"Zasilacz 12V", qty:3, location:"B2", minQty:2, toReturnUSA:true, createdAt: todayISO()},
+      { id: uid(), companyId: c1.id, sku:"KND-100", name:"Kondensator 100uF", qty:12, location:"A1", minQty:5, createdAt: todayISO()},
+      { id: uid(), companyId: c1.id, sku:"PSU-12V", name:"Zasilacz 12V", qty:3, location:"B2", minQty:2, createdAt: todayISO()},
     ],
   }
   return withDemo ? demo : { companies: [], jobs: [], inventory: [] }
@@ -54,8 +54,12 @@ export function migrate(data){
     jobType: j.jobType || "hub",
     shipIn: Number(j.shipIn||0), shipOut: Number(j.shipOut||0),
     insIn: Number(j.insIn||0), insOut: Number(j.insOut||0),
-    inventoryUsed: (j.inventoryUsed||[]).map(u => ({...u, qty: Number(u.qty||0), disposition: u.disposition || "keep"})),
+    inventoryUsed: (j.inventoryUsed||[]).map(u => ({
+      ...u,
+      qty: Number(u.qty||0),
+      disposition: u.disposition === "dispose" ? "dispose" : "keep"
+    })),
   }))
-  const inventory = (data.inventory||[]).map(i => ({...i, toReturnUSA: !!i.toReturnUSA}))
+  const inventory = (data.inventory||[]).map(({ toReturnUSA, ...i }) => ({ ...i }))
   return { companies: data.companies||[], jobs, inventory }
 }
