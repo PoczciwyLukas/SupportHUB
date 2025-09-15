@@ -198,22 +198,28 @@ export default function JobsPanel({ db, setDb, companyId }){
               </thead>
               <tbody>
                 {shown.map(j => (
-                  <tr key={j.id}>
-                    <td style={{fontWeight:600}}>{j.orderNumber}</td>
-                    <td>{j.serialNumber}</td>
-                    <td><span className="badge">{JOB_TYPES.find(t=>t.value===j.jobType)?.label || j.jobType}</span></td>
-                    <td>{j.dueDate ? <span className={isOverdue(j.dueDate) && !["zakonczone","odeslane"].includes(j.status) ? "danger-text":""}>{new Date(j.dueDate).toLocaleDateString()}</span> : "—"}</td>
-                    <td>{DEFAULT_STATUSES.find(s=>s.value===j.status)?.label || j.status}</td>
-                    <td>{new Date(j.createdAt).toLocaleString()}</td>
-                    <td>
-                      <div className="row-actions">
-                        <button className="btn" onClick={()=>edit(j)}>Edytuj</button>
-                        <button className="btn" onClick={()=>openUsage(j)}>Części</button>
-                        <button className="btn danger" onClick={()=>del(j.id)}>Usuń</button>
-                      </div>
-                      <JobDetails job={j} total={totalShip(j)} />
-                    </td>
-                  </tr>
+                  <React.Fragment key={j.id}>
+                    <tr>
+                      <td style={{fontWeight:600}}>{j.orderNumber}</td>
+                      <td>{j.serialNumber}</td>
+                      <td><span className="badge">{JOB_TYPES.find(t=>t.value===j.jobType)?.label || j.jobType}</span></td>
+                      <td>{j.dueDate ? <span className={isOverdue(j.dueDate) && !["zakonczone","odeslane"].includes(j.status) ? "danger-text":""}>{new Date(j.dueDate).toLocaleDateString()}</span> : "—"}</td>
+                      <td>{DEFAULT_STATUSES.find(s=>s.value===j.status)?.label || j.status}</td>
+                      <td>{new Date(j.createdAt).toLocaleString()}</td>
+                      <td>
+                        <div className="row-actions">
+                          <button className="btn" onClick={()=>edit(j)}>Edytuj</button>
+                          <button className="btn" onClick={()=>openUsage(j)}>Części</button>
+                          <button className="btn danger" onClick={()=>del(j.id)}>Usuń</button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan={7}>
+                        <JobDetails job={j} total={totalShip(j)} />
+                      </td>
+                    </tr>
+                  </React.Fragment>
                 ))}
                 {shown.length===0 && <tr><td colSpan="7" style={{textAlign:'center', padding:'16px', color:'#64748b'}}>Brak zleceń spełniających kryteria</td></tr>}
               </tbody>
