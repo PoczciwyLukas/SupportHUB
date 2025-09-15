@@ -95,7 +95,20 @@ export default function JobsPanel({ db, setDb, companyId }){
       return { ...it, qty: Math.max(0, it.qty - d) }
     })
     const newJobs = db.jobs.map(j => j.id===editId ? { ...j, inventoryUsed: after, updatedAt: todayISO() } : j)
-    setDb({ ...db, inventory: newInventory, jobs: newJobs })
+    const baseRepairQueue = db.repairQueue.filter(r => r.jobId !== editId)
+    const repairAdds = []
+    const partAdds = []
+    for(const u of after){
+      const qty = Number(u.qty||0)
+      if(u.disposition === 'renew' || u.disposition === 'return'){
+        repairAdds.push({ id: uid(), jobId: editId, name: u.name, sku: u.sku, qty, disposition: u.disposition, companyId, createdAt: todayISO() })
+      } else if(u.disposition === 'dispose'){
+        partAdds.push({ id: uid(), companyId, jobId: editId, itemId: u.itemId, qty, date: todayISO() })
+      }
+    }
+    const newRepairQueue = [...baseRepairQueue, ...repairAdds]
+    const newPartEvents = [...db.partEvents, ...partAdds]
+    setDb({ ...db, inventory: newInventory, jobs: newJobs, repairQueue: newRepairQueue, partEvents: newPartEvents })
     setUsageOpen(false)
     setEditId(null)
   }
