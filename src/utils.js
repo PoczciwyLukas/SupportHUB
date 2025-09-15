@@ -42,8 +42,10 @@ export function loadDb(withDemo=false){
       { id: uid(), companyId: c1.id, sku:"KND-100", name:"Kondensator 100uF", qty:12, location:"A1", minQty:5, createdAt: todayISO()},
       { id: uid(), companyId: c1.id, sku:"PSU-12V", name:"Zasilacz 12V", qty:3, location:"B2", minQty:2, createdAt: todayISO()},
     ],
+    repairQueue: [],
+    partEvents: [],
   }
-  return withDemo ? demo : { companies: [], jobs: [], inventory: [] }
+  return withDemo ? demo : { companies: [], jobs: [], inventory: [], repairQueue: [], partEvents: [] }
 }
 
 export function saveDb(db){ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)) } catch {} }
@@ -63,5 +65,11 @@ export function migrate(data){
     })),
   }))
   const inventory = (data.inventory||[]).map(({ toReturnUSA, ...i }) => ({ ...i }))
-  return { companies: data.companies||[], jobs, inventory }
+  return {
+    companies: data.companies||[],
+    jobs,
+    inventory,
+    repairQueue: data.repairQueue||[],
+    partEvents: data.partEvents||[]
+  }
 }
