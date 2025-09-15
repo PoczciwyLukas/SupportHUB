@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { todayISO, uid } from '../utils'
 
 export default function InventoryPanel({ db, setDb, companyId }){
-  const [form, setForm] = useState({ sku:"", name:"", qty:1, location:"", minQty:0, toReturnUSA:false })
+  const [form, setForm] = useState({ sku:"", name:"", qty:1, location:"", minQty:0 })
   const [search, setSearch] = useState("")
   const items = useMemo(()=> db.inventory.filter(i=>i.companyId===companyId), [db, companyId])
   const shown = useMemo(()=>{
@@ -16,9 +16,9 @@ export default function InventoryPanel({ db, setDb, companyId }){
 
   function addItem(){
     if(!form.name.trim()) return alert("Podaj nazwę pozycji")
-    const it = { id: uid(), companyId, sku: form.sku.trim(), name: form.name.trim(), qty: Math.max(0, Number(form.qty)||0), location: form.location.trim(), minQty: Math.max(0, Number(form.minQty)||0), toReturnUSA: !!form.toReturnUSA, createdAt: todayISO() }
+    const it = { id: uid(), companyId, sku: form.sku.trim(), name: form.name.trim(), qty: Math.max(0, Number(form.qty)||0), location: form.location.trim(), minQty: Math.max(0, Number(form.minQty)||0), createdAt: todayISO() }
     setDb({ ...db, inventory: [it, ...db.inventory] })
-    setForm({ sku:"", name:"", qty:1, location:"", minQty:0, toReturnUSA:false })
+    setForm({ sku:"", name:"", qty:1, location:"", minQty:0 })
   }
   function removeItem(id){
     if(!confirm("Usunąć pozycję z magazynu?")) return
@@ -55,10 +55,6 @@ export default function InventoryPanel({ db, setDb, companyId }){
               <input type="number" min="0" className="input" value={form.minQty} onChange={e=>setForm({...form, minQty:Number(e.target.value)})}/>
             </div>
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:8}}>
-            <input id="toReturnUSA" type="checkbox" checked={form.toReturnUSA} onChange={e=>setForm({...form, toReturnUSA:e.target.checked})} />
-            <label className="dim" htmlFor="toReturnUSA">Oznacz jako „do odesłania do USA”</label>
-          </div>
           <button className="btn primary" onClick={addItem} style={{marginTop:10}}>Dodaj do magazynu</button>
         </div>
       </div>
@@ -74,7 +70,7 @@ export default function InventoryPanel({ db, setDb, companyId }){
           <div className="header">Stan magazynu</div>
           <div className="body" style={{overflowX:'auto'}}>
             <table>
-              <thead><tr><th>Nazwa</th><th>SKU</th><th>Lokalizacja</th><th>Stan</th><th>Min</th><th>Do USA</th><th>Akcje</th></tr></thead>
+              <thead><tr><th>Nazwa</th><th>SKU</th><th>Lokalizacja</th><th>Stan</th><th>Min</th><th>Akcje</th></tr></thead>
               <tbody>
                 {shown.map(i => (
                   <tr key={i.id} className={i.qty <= i.minQty ? "low" : ""}>
@@ -88,7 +84,6 @@ export default function InventoryPanel({ db, setDb, companyId }){
                       </span>
                     </td>
                     <td>{i.minQty}</td>
-                    <td>{i.toReturnUSA ? "tak" : "nie"}</td>
                     <td>
                       <div className="row-actions">
                         <button className="btn" onClick={()=>adjustQty(i.id, +1)}>+1</button>
@@ -98,7 +93,7 @@ export default function InventoryPanel({ db, setDb, companyId }){
                     </td>
                   </tr>
                 ))}
-                {shown.length===0 && <tr><td colSpan="7" style={{textAlign:'center', padding:'16px'}} className="dim">Magazyn pusty</td></tr>}
+                {shown.length===0 && <tr><td colSpan="6" style={{textAlign:'center', padding:'16px'}} className="dim">Magazyn pusty</td></tr>}
               </tbody>
             </table>
           </div>

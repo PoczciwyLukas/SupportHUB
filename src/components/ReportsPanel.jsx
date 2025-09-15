@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { DEFAULT_STATUSES, JOB_TYPES, fmtPLN } from '../utils'
 
-export default function ReportsPanel({ jobs, inventory }){
+export default function ReportsPanel({ jobs }){
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
 
@@ -20,22 +20,14 @@ export default function ReportsPanel({ jobs, inventory }){
 
   const allUsages = inRange.flatMap(j=>j.inventoryUsed||[])
   const totalParts = allUsages.reduce((a,u)=>a+Number(u.qty||0),0)
-  const partsByDisp = [
-    { key:"return", label:"Zwrócone do USA", count: allUsages.filter(u=>u.disposition==="return").reduce((a,u)=>a+Number(u.qty||0),0) },
-    { key:"keep", label:"Pozostały u mnie", count: allUsages.filter(u=>u.disposition==="keep").reduce((a,u)=>a+Number(u.qty||0),0) },
-    { key:"dispose", label:"Utylizacja", count: allUsages.filter(u=>u.disposition==="dispose").reduce((a,u)=>a+Number(u.qty||0),0) },
-  ]
+  const keptParts = allUsages.filter(u=>u.disposition==="keep").reduce((a,u)=>a+Number(u.qty||0),0)
+  const disposedParts = allUsages.filter(u=>u.disposition==="dispose").reduce((a,u)=>a+Number(u.qty||0),0)
 
   const shipInSum = inRange.reduce((s,j)=> s + Number(j.shipIn||0), 0)
   const shipOutSum = inRange.reduce((s,j)=> s + Number(j.shipOut||0), 0)
   const insInSum = inRange.reduce((s,j)=> s + Number(j.insIn||0), 0)
   const insOutSum = inRange.reduce((s,j)=> s + Number(j.insOut||0), 0)
   const shipTotal = shipInSum + shipOutSum + insInSum + insOutSum
-
-  const inventoryMap = new Map(inventory.map(i=>[i.id,i]))
-  const mustReturnUsed = allUsages.filter(u => inventoryMap.get(u.itemId)?.toReturnUSA)
-  const mustReturnQty = mustReturnUsed.reduce((a,u)=>a+Number(u.qty||0),0)
-  const mustReturnActuallyReturned = mustReturnUsed.filter(u=>u.disposition==="return").reduce((a,u)=>a+Number(u.qty||0),0)
 
   return (
     <div className="grid" style={{gap:16, gridTemplateColumns:'1fr 1fr'}}>
@@ -85,21 +77,18 @@ export default function ReportsPanel({ jobs, inventory }){
         <div className="header">Podsumowanie części</div>
         <div className="body">
           <div>Łącznie użytych (szt.): <strong>{totalParts}</strong></div>
-          <div className="grid" style={{gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginTop:8}}>
-            {partsByDisp.map(p => (
-              <div key={p.key} className="card">
-                <div className="body">
-                  <div className="dim" style={{fontSize:12}}>{p.label}</div>
-                  <div style={{fontSize:24, fontWeight:700}}>{p.count}</div>
-                </div>
+          <div className="grid" style={{gridTemplateColumns:'1fr 1fr', gap:12, marginTop:8}}>
+            <div className="card">
+              <div className="body">
+                <div className="dim" style={{fontSize:12}}>Pozostały u mnie</div>
+                <div style={{fontSize:24, fontWeight:700}}>{keptParts}</div>
               </div>
-            ))}
-          </div>
-          <div className="card" style={{marginTop:12}}>
-            <div className="body" style={{fontSize:14}}>
-              <div style={{fontWeight:600, marginBottom:4}}>Kontrola zwrotów do USA</div>
-              <div>Oznaczone w magazynie jako „do USA”: <strong>{mustReturnQty}</strong> szt.</div>
-              <div>Rzeczywiście odesłane: <strong>{mustReturnActuallyReturned}</strong> szt.</div>
+            </div>
+            <div className="card">
+              <div className="body">
+                <div className="dim" style={{fontSize:12}}>Utylizacja</div>
+                <div style={{fontSize:24, fontWeight:700}}>{disposedParts}</div>
+              </div>
             </div>
           </div>
         </div>

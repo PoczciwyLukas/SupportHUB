@@ -280,7 +280,7 @@ function JobDetails({ job, total }){
       ) : (
         <ul style={{paddingLeft:18, margin:0}}>
           {job.inventoryUsed.map((u, idx) => (
-            <li key={idx}>{u.name} (SKU: {u.sku}) — {u.qty} szt. — los: {u.disposition==="return"?"zwrócone do USA": u.disposition==="dispose"?"utylizacja":"pozostaje u mnie"}</li>
+            <li key={idx}>{u.name} (SKU: {u.sku}) — {u.qty} szt. — los: {u.disposition==="dispose"?"utylizacja":"pozostaje u mnie"}</li>
           ))}
         </ul>
       )}
@@ -322,7 +322,6 @@ function InventoryUsageEditor({ usage, setUsage, inventory }){
           <div className="label">Los części</div>
           <select className="input" value={disp} onChange={e=>setDisp(e.target.value)}>
             <option value="keep">Pozostaje u mnie</option>
-            <option value="return">Zwrócić do USA</option>
             <option value="dispose">Utylizacja</option>
           </select>
         </div>
@@ -338,7 +337,7 @@ function InventoryUsageEditor({ usage, setUsage, inventory }){
                 <tr><td colSpan="5" style={{textAlign:'center', padding:'12px'}} className="dim">Nic nie dodano</td></tr>
               ) : usage.map((u, idx) => (
                 <tr key={idx}>
-                  <td>{u.name}</td><td>{u.sku}</td><td>{u.qty}</td><td>{u.disposition==="return"?"zwrócić do USA":u.disposition==="dispose"?"utylizacja":"pozostaje u mnie"}</td>
+                  <td>{u.name}</td><td>{u.sku}</td><td>{u.qty}</td><td>{u.disposition==="dispose"?"utylizacja":"pozostaje u mnie"}</td>
                   <td style={{textAlign:'right'}}><button className="btn ghost" onClick={()=>removeLine(u.itemId, u.disposition)}>Usuń</button></td>
                 </tr>
               ))}
