@@ -50,10 +50,10 @@ export default function ReportsPanel({ jobs, partEvents }){
   const shipTotal = shipmentSum + insuranceSum
 
   return (
-    <div className="grid" style={{gap:16, gridTemplateColumns:'1fr 1fr'}}>
-      <div className="card" style={{gridColumn:'1 / -1'}}>
+    <div className="dashboard-grid">
+      <div className="card dashboard-grid__full">
         <div className="header">Zakres dat</div>
-        <div className="body" style={{display:'grid', gap:12, gridTemplateColumns:'1fr 1fr'}}>
+        <div className="body grid col-2">
           <div>
             <div className="label">Od</div>
             <input type="date" className="input" value={from} onChange={e=>setFrom(e.target.value)} />
@@ -69,7 +69,7 @@ export default function ReportsPanel({ jobs, partEvents }){
         <div className="header">Podsumowanie zleceń</div>
         <div className="body">
           <div>Łącznie (w zakresie): <strong>{totalJobs}</strong></div>
-          <div className="grid" style={{gridTemplateColumns:'1fr 1fr', gap:12, marginTop:8}}>
+          <div className="summary-grid summary-grid--spaced">
             {byStatus.map(s => (
               <div key={s.status} className="card">
                 <div className="body">
@@ -80,7 +80,7 @@ export default function ReportsPanel({ jobs, partEvents }){
             ))}
           </div>
           <div style={{height:1, background:'#e2e8f0', margin:'12px 0'}}></div>
-          <div className="grid" style={{gridTemplateColumns:'1fr 1fr', gap:12}}>
+          <div className="summary-grid summary-grid--spaced">
             {byType.map(t => (
               <div key={t.type} className="card">
                 <div className="body">
@@ -97,7 +97,7 @@ export default function ReportsPanel({ jobs, partEvents }){
         <div className="header">Podsumowanie części</div>
         <div className="body">
           <div>Łącznie użytych (szt.): <strong>{totalParts}</strong></div>
-          <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:12, marginTop:8}}>
+          <div className="summary-grid summary-grid--auto summary-grid--spaced">
             <div className="card">
               <div className="body">
                 <div className="dim" style={{fontSize:12}}>Pozostały u mnie</div>
@@ -111,7 +111,7 @@ export default function ReportsPanel({ jobs, partEvents }){
               </div>
             </div>
           </div>
-          <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:12, marginTop:8}}>
+          <div className="summary-grid summary-grid--auto summary-grid--spaced">
             <div className="card">
               <div className="body">
                 <div className="dim" style={{fontSize:12}}>Utylizacje</div>
@@ -134,7 +134,7 @@ export default function ReportsPanel({ jobs, partEvents }){
         </div>
       </div>
 
-      <div className="card" style={{gridColumn:'1 / -1'}}>
+      <div className="card dashboard-grid__full">
         <div className="header">Koszty przesyłek (PLN)</div>
         <div className="body" style={{fontSize:14}}>
           <div className="grid" style={{gridTemplateColumns:'1fr 1fr', gap:12}}>
