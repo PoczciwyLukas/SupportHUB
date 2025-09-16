@@ -119,71 +119,85 @@ export default function JobsPanel({ db, setDb, companyId }){
     <div className="layout">
       <div className="card">
         <div className="header">{editId ? "Edytuj zlecenie" : "Nowe zlecenie"}</div>
-        <div className="body">
-          <div className="label">Numer zlecenia *</div>
-          <input className="input" value={form.orderNumber} onChange={e=>setForm({...form, orderNumber:e.target.value})} placeholder="np. ZL-2025-001"/>
-          <div className="label" style={{marginTop:10}}>Numer seryjny urządzenia</div>
-          <input className="input" value={form.serialNumber} onChange={e=>setForm({...form, serialNumber:e.target.value})} placeholder="np. SN123456"/>
-          <div className="label" style={{marginTop:10}}>Opis usterki</div>
-          <textarea className="input" value={form.issueDesc} onChange={e=>setForm({...form, issueDesc:e.target.value})} placeholder="Co się dzieje z urządzeniem?" />
-          <div className="grid col-2">
-            <div>
+        <div className="body form-stack">
+          <div className="form-row">
+            <div className="label">Numer zlecenia *</div>
+            <input className="input" value={form.orderNumber} onChange={e=>setForm({...form, orderNumber:e.target.value})} placeholder="np. ZL-2025-001"/>
+          </div>
+          <div className="form-row">
+            <div className="label">Numer seryjny urządzenia</div>
+            <input className="input" value={form.serialNumber} onChange={e=>setForm({...form, serialNumber:e.target.value})} placeholder="np. SN123456"/>
+          </div>
+          <div className="form-row">
+            <div className="label">Opis usterki</div>
+            <textarea className="input" value={form.issueDesc} onChange={e=>setForm({...form, issueDesc:e.target.value})} placeholder="Co się dzieje z urządzeniem?" />
+          </div>
+          <div className="form-columns">
+            <div className="form-row">
               <div className="label">Tracking (przychodzący)</div>
-              <div style={{display:'flex', gap:8}}>
+              <div className="form-inline">
                 <input className="input" value={form.incomingTracking} onChange={e=>setForm({...form, incomingTracking:e.target.value})} placeholder="URL lub numer listu"/>
                 <a className="btn" href={ensureUrlOrSearch(form.incomingTracking)||'#'} target="_blank" rel="noreferrer">Otwórz</a>
               </div>
             </div>
-            <div>
+            <div className="form-row">
               <div className="label">Tracking (wychodzący)</div>
-              <div style={{display:'flex', gap:8}}>
+              <div className="form-inline">
                 <input className="input" value={form.outgoingTracking} onChange={e=>setForm({...form, outgoingTracking:e.target.value})} placeholder="URL lub numer listu"/>
                 <a className="btn" href={ensureUrlOrSearch(form.outgoingTracking)||'#'} target="_blank" rel="noreferrer">Otwórz</a>
               </div>
             </div>
           </div>
-          <div className="label" style={{marginTop:10}}>Opis czynności wykonanych</div>
-          <textarea className="input" value={form.actionsDesc} onChange={e=>setForm({...form, actionsDesc:e.target.value})} placeholder="Co zostało zrobione?" />
-          <div className="grid col-2">
-            <div>
+          <div className="form-row">
+            <div className="label">Opis czynności wykonanych</div>
+            <textarea className="input" value={form.actionsDesc} onChange={e=>setForm({...form, actionsDesc:e.target.value})} placeholder="Co zostało zrobione?" />
+          </div>
+          <div className="form-columns">
+            <div className="form-row">
               <div className="label">Status</div>
               <select className="input" value={form.status} onChange={e=>setForm({...form, status:e.target.value})}>
                 {DEFAULT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
-            <div>
+            <div className="form-row">
               <div className="label">Typ zlecenia</div>
               <select className="input" value={form.jobType} onChange={e=>setForm({...form, jobType:e.target.value})}>
                 {JOB_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
           </div>
-          <div>
+          <div className="form-row">
             <div className="label">Termin (SLA)</div>
             <input type="date" className="input" value={form.dueDate} onChange={e=>setForm({...form, dueDate:e.target.value})} />
           </div>
-          <div className="card" style={{marginTop:12}}>
-            <div className="header">Koszty przesyłki i ubezpieczenia (PLN)</div>
-            <div className="body">
-              <div className="grid col-2">
-                <div>
-                  <div className="muted" style={{fontSize:12, marginBottom:6}}>PRZYCHODZĄCA (IN)</div>
+          <div className="form-section">
+            <div className="form-section-title">Koszty przesyłki i ubezpieczenia (PLN)</div>
+            <div className="form-columns">
+              <div className="form-stack">
+                <div className="form-section-caption muted">PRZYCHODZĄCA (IN)</div>
+                <div className="form-row">
                   <div className="label">Koszt przesyłki (IN)</div>
                   <input type="number" min="0" step="0.01" className="input" value={form.shipIn} onChange={e=>setForm({...form, shipIn:e.target.value})} placeholder="np. 85.00" />
-                  <div className="label" style={{marginTop:10}}>Ubezpieczenie (IN)</div>
+                </div>
+                <div className="form-row">
+                  <div className="label">Ubezpieczenie (IN)</div>
                   <input type="number" min="0" step="0.01" className="input" value={form.insIn} onChange={e=>setForm({...form, insIn:e.target.value})} placeholder="np. 12.00" />
                 </div>
-                <div>
-                  <div className="muted" style={{fontSize:12, marginBottom:6}}>WYCHODZĄCA (OUT)</div>
+              </div>
+              <div className="form-stack">
+                <div className="form-section-caption muted">WYCHODZĄCA (OUT)</div>
+                <div className="form-row">
                   <div className="label">Koszt przesyłki (OUT)</div>
                   <input type="number" min="0" step="0.01" className="input" value={form.shipOut} onChange={e=>setForm({...form, shipOut:e.target.value})} placeholder="np. 95.00" />
-                  <div className="label" style={{marginTop:10}}>Ubezpieczenie (OUT)</div>
+                </div>
+                <div className="form-row">
+                  <div className="label">Ubezpieczenie (OUT)</div>
                   <input type="number" min="0" step="0.01" className="input" value={form.insOut} onChange={e=>setForm({...form, insOut:e.target.value})} placeholder="np. 15.00" />
                 </div>
               </div>
             </div>
           </div>
-          <div style={{display:'flex', gap:8, marginTop:12}}>
+          <div className="form-actions">
             <button className="btn primary" onClick={save}>{editId ? "Zapisz zmiany" : "Dodaj zlecenie"}</button>
             {editId && <button className="btn" onClick={reset}>Anuluj</button>}
           </div>
