@@ -16,7 +16,7 @@ export default function App(){
 
   const company = useMemo(()=> db.companies.find(c=>c.id===companyId) || null, [db, companyId])
   const jobs = useMemo(()=> db.jobs.filter(j=>j.companyId===companyId), [db, companyId])
-  const inventory = useMemo(()=> db.inventory.filter(i=>i.companyId===companyId), [db, companyId])
+  const partEvents = useMemo(()=> db.partEvents.filter(e=>e.companyId===companyId), [db, companyId])
 
   return (
     <div>
@@ -49,7 +49,7 @@ export default function App(){
 
             {tab==="jobs" && <JobsPanel db={db} setDb={setDb} companyId={companyId} />}
             {tab==="inv" && <InventoryPanel db={db} setDb={setDb} companyId={companyId} />}
-            {tab==="rep" && <ReportsPanel jobs={jobs} inventory={inventory} />}
+            {tab==="rep" && <ReportsPanel jobs={jobs} partEvents={partEvents} />}
           </>
         )}
         <div className="muted" style={{fontSize:12, padding:'12px 0 36px'}}>Dane lokalnie w przeglądarce. Import/Export = kopia/przenoszenie.</div>

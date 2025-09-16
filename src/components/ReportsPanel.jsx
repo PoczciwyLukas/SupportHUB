@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react'
 import { DEFAULT_STATUSES, JOB_TYPES, fmtPLN } from '../utils'
 
-export default function ReportsPanel({ jobs }){
+export default function ReportsPanel({ jobs, partEvents }){
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
 
-  const inRange = useMemo(()=>{
+  const jobsInRange = useMemo(()=>{
     const f = from ? new Date(from + "T00:00:00").getTime() : -Infinity
     const t = to ? new Date(to + "T23:59:59").getTime() : Infinity
     return jobs.filter(j => {
@@ -14,19 +14,31 @@ export default function ReportsPanel({ jobs }){
     })
   }, [jobs, from, to])
 
-  const totalJobs = inRange.length
-  const byStatus = DEFAULT_STATUSES.map(s => ({ status: s.value, label: s.label, count: inRange.filter(j=>j.status===s.value).length }))
-  const byType = JOB_TYPES.map(t => ({ type: t.value, label: t.label, count: inRange.filter(j=>(j.jobType||"hub")===t.value).length }))
+  const eventsInRange = useMemo(()=>{
+    const f = from ? new Date(from + "T00:00:00").getTime() : -Infinity
+    const t = to ? new Date(to + "T23:59:59").getTime() : Infinity
+    return partEvents.filter(e => {
+      const ts = new Date(e.eventDate).getTime()
+      return ts >= f && ts <= t
+    })
+  }, [partEvents, from, to])
 
-  const allUsages = inRange.flatMap(j=>j.inventoryUsed||[])
+  const totalJobs = jobsInRange.length
+  const byStatus = DEFAULT_STATUSES.map(s => ({ status: s.value, label: s.label, count: jobsInRange.filter(j=>j.status===s.value).length }))
+  const byType = JOB_TYPES.map(t => ({ type: t.value, label: t.label, count: jobsInRange.filter(j=>(j.jobType||"hub")===t.value).length }))
+
+  const allUsages = jobsInRange.flatMap(j=>j.inventoryUsed||[])
   const totalParts = allUsages.reduce((a,u)=>a+Number(u.qty||0),0)
   const keptParts = allUsages.filter(u=>u.disposition==="keep").reduce((a,u)=>a+Number(u.qty||0),0)
   const disposedParts = allUsages.filter(u=>u.disposition==="dispose").reduce((a,u)=>a+Number(u.qty||0),0)
 
-  const shipInSum = inRange.reduce((s,j)=> s + Number(j.shipIn||0), 0)
-  const shipOutSum = inRange.reduce((s,j)=> s + Number(j.shipOut||0), 0)
-  const insInSum = inRange.reduce((s,j)=> s + Number(j.insIn||0), 0)
-  const insOutSum = inRange.reduce((s,j)=> s + Number(j.insOut||0), 0)
+  const disposedEvents = eventsInRange.filter(e=>e.type==="dispose").reduce((a,e)=>a+Number(e.qty||0),0)
+  const returnedEvents = eventsInRange.filter(e=>e.type==="return").reduce((a,e)=>a+Number(e.qty||0),0)
+
+  const shipInSum = jobsInRange.reduce((s,j)=> s + Number(j.shipIn||0), 0)
+  const shipOutSum = jobsInRange.reduce((s,j)=> s + Number(j.shipOut||0), 0)
+  const insInSum = jobsInRange.reduce((s,j)=> s + Number(j.insIn||0), 0)
+  const insOutSum = jobsInRange.reduce((s,j)=> s + Number(j.insOut||0), 0)
   const shipTotal = shipInSum + shipOutSum + insInSum + insOutSum
 
   return (
@@ -88,6 +100,20 @@ export default function ReportsPanel({ jobs }){
               <div className="body">
                 <div className="dim" style={{fontSize:12}}>Utylizacja</div>
                 <div style={{fontSize:24, fontWeight:700}}>{disposedParts}</div>
+              </div>
+            </div>
+          </div>
+          <div className="grid" style={{gridTemplateColumns:'1fr 1fr', gap:12, marginTop:8}}>
+            <div className="card">
+              <div className="body">
+                <div className="dim" style={{fontSize:12}}>Utylizacje</div>
+                <div style={{fontSize:24, fontWeight:700}}>{disposedEvents}</div>
+              </div>
+            </div>
+            <div className="card">
+              <div className="body">
+                <div className="dim" style={{fontSize:12}}>Odesłania</div>
+                <div style={{fontSize:24, fontWeight:700}}>{returnedEvents}</div>
               </div>
             </div>
           </div>
