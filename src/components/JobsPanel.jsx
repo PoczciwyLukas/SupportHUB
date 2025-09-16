@@ -102,9 +102,9 @@ export default function JobsPanel({ db, setDb, companyId }){
     for(const u of after){
       const qty = Number(u.qty||0)
       if(u.disposition === 'renew' || u.disposition === 'return'){
-        repairAdds.push({ id: uid(), jobId: editId, name: u.name, sku: u.sku, qty, disposition: u.disposition, companyId, createdAt: todayISO() })
+        repairAdds.push({ id: uid(), jobId: editId, itemId: u.itemId, name: u.name, sku: u.sku, qty, disposition: u.disposition, companyId, createdAt: todayISO() })
       } else if(u.disposition === 'dispose'){
-        partAdds.push({ id: uid(), companyId, jobId: editId, itemId: u.itemId, qty, date: todayISO() })
+        partAdds.push({ id: uid(), companyId, jobId: editId, itemId: u.itemId, sku: u.sku, name: u.name, qty, type: 'dispose', eventDate: todayISO() })
       }
     }
     const newRepairQueue = [...baseRepairQueue, ...repairAdds]
@@ -247,6 +247,7 @@ export default function JobsPanel({ db, setDb, companyId }){
             </table>
           </div>
         </div>
+
       </div>
 
       {usageOpen && (
