@@ -65,11 +65,47 @@ export function migrate(data){
     })),
   }))
   const inventory = (data.inventory||[]).map(({ toReturnUSA, ...i }) => ({ ...i }))
+  const jobMap = new Map(jobs.map(j => [j.id, j]))
+  const repairQueue = (data.repairQueue||[]).map(r => {
+    const job = r.jobId ? jobMap.get(r.jobId) : null
+    const companyId = r.companyId || job?.companyId || null
+    if(!companyId) return null
+    return {
+      ...r,
+      id: r.id || uid(),
+      companyId,
+      jobId: r.jobId || null,
+      itemId: r.itemId || r.inventoryItemId || null,
+      name: r.name || "",
+      sku: r.sku || "",
+      qty: Number(r.qty||0),
+      disposition: r.disposition || 'renew',
+      createdAt: r.createdAt || r.addedAt || todayISO(),
+    }
+  }).filter(Boolean)
+  const partEvents = (data.partEvents||[]).map(ev => {
+    const job = ev.jobId ? jobMap.get(ev.jobId) : null
+    const companyId = ev.companyId || job?.companyId || null
+    if(!companyId) return null
+    const rawType = ev.type || ev.eventType || ev.disposition
+    const type = rawType === 'return' ? 'return' : 'dispose'
+    return {
+      id: ev.id || uid(),
+      companyId,
+      jobId: ev.jobId || null,
+      itemId: ev.itemId || null,
+      sku: ev.sku || "",
+      name: ev.name || "",
+      qty: Number(ev.qty||0),
+      type,
+      eventDate: ev.eventDate || ev.date || ev.createdAt || todayISO(),
+    }
+  }).filter(Boolean)
   return {
     companies: data.companies||[],
     jobs,
     inventory,
-    repairQueue: data.repairQueue||[],
-    partEvents: data.partEvents||[]
+    repairQueue,
+    partEvents
   }
 }
