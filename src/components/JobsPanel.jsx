@@ -206,15 +206,15 @@ export default function JobsPanel({ db, setDb, companyId }){
 
       <div>
         <div className="card">
-          <div className="body" style={{display:'flex', gap:8, flexWrap:'wrap'}}>
-            <div style={{position:'relative', flex:1, minWidth:220}}>
+          <div className="body filter-bar">
+            <div className="filter-bar__search">
               <input className="input" placeholder="Szukaj (nr, SN, opis...)" value={search} onChange={e=>setSearch(e.target.value)} />
             </div>
-            <select className="input" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{width:180}}>
+            <select className="input" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
               <option value="all">Wszystkie statusy</option>
               {DEFAULT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
-            <select className="input" value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} style={{width:220}}>
+            <select className="input" value={typeFilter} onChange={e=>setTypeFilter(e.target.value)}>
               <option value="all">Wszystkie typy</option>
               {JOB_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
