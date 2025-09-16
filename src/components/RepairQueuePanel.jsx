@@ -8,6 +8,11 @@ const DISPOSITION_LABELS = {
   return: 'odesłanie do producenta',
 }
 
+const DISPOSITION_ACTIONS = {
+  renew: ['ok', 'bad'],
+  return: ['return'],
+}
+
 export default function RepairQueuePanel({ db, setDb, companyId }){
   const repairQueue = useMemo(() => db.repairQueue.filter(r => r.companyId === companyId), [db, companyId])
   const jobMap = useMemo(() => {
@@ -21,6 +26,8 @@ export default function RepairQueuePanel({ db, setDb, companyId }){
   function resolveQueueItem(id, action){
     const entry = db.repairQueue.find(r=>r.id===id && r.companyId===companyId)
     if(!entry) return
+    const supportedActions = DISPOSITION_ACTIONS[entry.disposition]
+    if(supportedActions && !supportedActions.includes(action)) return
     const qty = Number(entry.qty||0)
     const remainingQueue = db.repairQueue.filter(r=>r.id!==id)
 
@@ -99,9 +106,15 @@ export default function RepairQueuePanel({ db, setDb, companyId }){
                     <td>{DISPOSITION_LABELS[item.disposition] || item.disposition}</td>
                     <td>
                       <div className="row-actions">
-                        <button className="btn" onClick={()=>queueOk(item.id)} disabled={!item.itemId}>OK</button>
-                        <button className="btn danger" onClick={()=>queueBad(item.id)}>BAD</button>
-                        <button className="btn" onClick={()=>queueReturn(item.id)}>Odesłano</button>
+                        {item.disposition === 'renew' && (
+                          <>
+                            <button className="btn" onClick={()=>queueOk(item.id)} disabled={!item.itemId}>OK</button>
+                            <button className="btn danger" onClick={()=>queueBad(item.id)}>BAD</button>
+                          </>
+                        )}
+                        {item.disposition === 'return' && (
+                          <button className="btn" onClick={()=>queueReturn(item.id)}>Odesłano</button>
+                        )}
                       </div>
                     </td>
                   </tr>
