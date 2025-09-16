@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import RepairQueuePanel from './RepairQueuePanel.jsx'
 import { todayISO, uid } from '../utils'
 
 export default function InventoryPanel({ db, setDb, companyId }){
@@ -97,6 +98,10 @@ export default function InventoryPanel({ db, setDb, companyId }){
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div style={{marginTop:16}}>
+          <RepairQueuePanel db={db} setDb={setDb} companyId={companyId} />
         </div>
       </div>
     </div>
