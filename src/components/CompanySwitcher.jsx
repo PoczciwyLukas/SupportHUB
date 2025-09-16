@@ -19,7 +19,14 @@ export default function CompanySwitcher({ db, setDb, companyId, setCompanyId }){
     const newCompanies = db.companies.filter(c=>c.id!==companyId)
     const newCompanyId = newCompanies[0]?.id || ""
     setCompanyId(newCompanyId)
-    setDb({ ...db, companies: newCompanies, jobs: db.jobs.filter(j=>j.companyId!==companyId), inventory: db.inventory.filter(i=>i.companyId!==companyId)})
+    setDb({
+      ...db,
+      companies: newCompanies,
+      jobs: db.jobs.filter(j=>j.companyId!==companyId),
+      inventory: db.inventory.filter(i=>i.companyId!==companyId),
+      repairQueue: db.repairQueue.filter(r=>r.companyId!==companyId),
+      partEvents: db.partEvents.filter(e=>e.companyId!==companyId),
+    })
   }
 
   return (
