@@ -5,6 +5,11 @@ export default function ReportsPanel({ jobs, partEvents }){
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
 
+  const scopedPartEvents = useMemo(
+    () => (Array.isArray(partEvents) ? partEvents : []),
+    [partEvents]
+  )
+
   const jobsInRange = useMemo(()=>{
     const f = from ? new Date(from + "T00:00:00").getTime() : -Infinity
     const t = to ? new Date(to + "T23:59:59").getTime() : Infinity
@@ -17,11 +22,11 @@ export default function ReportsPanel({ jobs, partEvents }){
   const eventsInRange = useMemo(()=>{
     const f = from ? new Date(from + "T00:00:00").getTime() : -Infinity
     const t = to ? new Date(to + "T23:59:59").getTime() : Infinity
-    return partEvents.filter(e => {
+    return scopedPartEvents.filter(e => {
       const ts = new Date(e.eventDate).getTime()
       return ts >= f && ts <= t
     })
-  }, [partEvents, from, to])
+  }, [scopedPartEvents, from, to])
 
   const totalJobs = jobsInRange.length
   const byStatus = DEFAULT_STATUSES.map(s => ({ status: s.value, label: s.label, count: jobsInRange.filter(j=>j.status===s.value).length }))
