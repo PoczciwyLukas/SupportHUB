@@ -26,6 +26,13 @@ export const fmtPLN = (n) => new Intl.NumberFormat("pl-PL", { style: "currency",
 export const isOverdue = (d) => d ? (new Date() > new Date(d + "T23:59:59")) : false
 
 export function loadDb(withDemo=false){
+  const createEmptyDb = () => ({
+    companies: [],
+    jobs: [],
+    inventory: [],
+    repairQueue: [],
+    partEvents: [],
+  })
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw && !withDemo) return JSON.parse(raw)
@@ -33,6 +40,7 @@ export function loadDb(withDemo=false){
   const c1 = { id: uid(), name: "Firma A", createdAt: todayISO() }
   const c2 = { id: uid(), name: "Firma B", createdAt: todayISO() }
   const demo = {
+    ...createEmptyDb(),
     companies: [c1, c2],
     jobs: [
       { id: uid(), companyId: c1.id, orderNumber: "ZL-2025-001", serialNumber:"SN12345", issueDesc:"Nie włącza się", incomingTracking:"DHL-123", outgoingTracking:"", actionsDesc:"Diagnoza zasilania", status:"wtrakcie", jobType:"hub", dueDate: new Date().toISOString().slice(0,10), shipIn:85, shipOut:95, insIn:12, insOut:15, createdAt: todayISO(), updatedAt: todayISO(), inventoryUsed: []},
@@ -42,10 +50,8 @@ export function loadDb(withDemo=false){
       { id: uid(), companyId: c1.id, sku:"KND-100", name:"Kondensator 100uF", qty:12, location:"A1", minQty:5, createdAt: todayISO()},
       { id: uid(), companyId: c1.id, sku:"PSU-12V", name:"Zasilacz 12V", qty:3, location:"B2", minQty:2, createdAt: todayISO()},
     ],
-    repairQueue: [],
-    partEvents: [],
   }
-  return withDemo ? demo : { companies: [], jobs: [], inventory: [], repairQueue: [], partEvents: [] }
+  return withDemo ? demo : createEmptyDb()
 }
 
 export function saveDb(db){ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)) } catch {} }
