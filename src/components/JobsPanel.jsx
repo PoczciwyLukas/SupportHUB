@@ -7,6 +7,7 @@ const DISPOSITION_LABELS = {
   renew: 'odnowienie',
   return: 'odesłanie do producenta',
 }
+const DEFAULT_DISPOSITION = 'dispose'
 
 export default function JobsPanel({ db, setDb, companyId }){
   const emptyForm = { orderNumber:"", serialNumber:"", issueDesc:"", incomingTracking:"", outgoingTracking:"", actionsDesc:"", status:"nowe", jobType:"hub", dueDate:"", shipIn:"", shipOut:"", insIn:"", insOut:"" }
@@ -317,9 +318,9 @@ function JobDetails({ job, total }){
 function InventoryUsageEditor({ usage, setUsage, inventory }){
   const [itemId, setItemId] = useState("")
   const [qty, setQty] = useState(1)
-  const [disp, setDisp] = useState("keep")
+  const [disp, setDisp] = useState(DEFAULT_DISPOSITION)
   function add(){
-    if(!itemId || qty<1) return
+    if(!itemId || qty<1 || !disp) return
     const item = inventory.find(i=>i.id===itemId)
     if(!item) return
     setUsage(prev => {
@@ -327,7 +328,7 @@ function InventoryUsageEditor({ usage, setUsage, inventory }){
       if(ex) return prev.map(u => (u.itemId===itemId && u.disposition===disp) ? { ...u, qty: u.qty + qty } : u)
       return [...prev, { itemId, sku:item.sku, name:item.name, qty, disposition: disp }]
     })
-    setItemId(""); setQty(1); setDisp("keep")
+    setItemId(""); setQty(1); setDisp(DEFAULT_DISPOSITION)
   }
   function removeLine(id, d){ setUsage(usage.filter(u => !(u.itemId===id && u.disposition===d))) }
   return (
@@ -347,13 +348,13 @@ function InventoryUsageEditor({ usage, setUsage, inventory }){
         <div>
           <div className="label">Los części</div>
           <select className="input" value={disp} onChange={e=>setDisp(e.target.value)}>
-            <option value="keep">Pozostaje u mnie</option>
             <option value="dispose">Utylizacja</option>
             <option value="renew">Odnowienie</option>
             <option value="return">Odesłanie do producenta</option>
+            <option value="keep">Pozostaje u mnie</option>
           </select>
         </div>
-        <div><button className="btn primary" onClick={add} style={{width:'100%'}}>Dodaj</button></div>
+        <div><button className="btn primary" onClick={add} style={{width:'100%'}} disabled={!itemId || qty<1 || !disp}>Dodaj</button></div>
       </div>
 
       <div className="card" style={{marginTop:12}}>
