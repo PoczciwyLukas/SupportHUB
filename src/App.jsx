@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { ensureUrlOrSearch, fmtPLN, loadDb, migrate, saveDb, todayISO } from './utils'
+import { loadDb, migrate, saveDb } from './utils'
 import CompanySwitcher from './components/CompanySwitcher.jsx'
 import ImportExport from './components/ImportExport.jsx'
 import JobsPanel from './components/JobsPanel.jsx'
