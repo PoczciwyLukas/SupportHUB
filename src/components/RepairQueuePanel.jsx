@@ -68,7 +68,7 @@ export default function RepairQueuePanel({ db, setDb, companyId }){
   return (
     <div className="card">
       <div className="header">Kolejka części</div>
-      <div className="body" style={{overflowX:'auto'}}>
+      <div className="body inventory-table">
         <table>
           <thead>
             <tr>
