@@ -31,3 +31,4 @@ th { font-weight: 500; color:#64748b; }
 .row-actions { display:flex; flex-wrap:wrap; gap:6px; }
 .danger-text { color:#b91c1c; }
 .dim { color:#64748b; }
+.low { background:#fef2f2; color:#991b1b; }
