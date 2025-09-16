@@ -39,6 +39,7 @@ export default function ReportsPanel({ jobs, partEvents }){
 
   const disposedEvents = eventsInRange.filter(e=>e.type==="dispose").reduce((a,e)=>a+Number(e.qty||0),0)
   const returnedEvents = eventsInRange.filter(e=>e.type==="return").reduce((a,e)=>a+Number(e.qty||0),0)
+  const renewEventsCount = eventsInRange.filter(e=>e.type==="renew").length
 
   const shipInSum = jobsInRange.reduce((s,j)=> s + Number(j.shipIn||0), 0)
   const shipOutSum = jobsInRange.reduce((s,j)=> s + Number(j.shipOut||0), 0)
@@ -94,7 +95,7 @@ export default function ReportsPanel({ jobs, partEvents }){
         <div className="header">Podsumowanie części</div>
         <div className="body">
           <div>Łącznie użytych (szt.): <strong>{totalParts}</strong></div>
-          <div className="grid" style={{gridTemplateColumns:'1fr 1fr', gap:12, marginTop:8}}>
+          <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:12, marginTop:8}}>
             <div className="card">
               <div className="body">
                 <div className="dim" style={{fontSize:12}}>Pozostały u mnie</div>
@@ -108,7 +109,7 @@ export default function ReportsPanel({ jobs, partEvents }){
               </div>
             </div>
           </div>
-          <div className="grid" style={{gridTemplateColumns:'1fr 1fr', gap:12, marginTop:8}}>
+          <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:12, marginTop:8}}>
             <div className="card">
               <div className="body">
                 <div className="dim" style={{fontSize:12}}>Utylizacje</div>
@@ -119,6 +120,12 @@ export default function ReportsPanel({ jobs, partEvents }){
               <div className="body">
                 <div className="dim" style={{fontSize:12}}>Odesłania</div>
                 <div style={{fontSize:24, fontWeight:700}}>{returnedEvents}</div>
+              </div>
+            </div>
+            <div className="card">
+              <div className="body">
+                <div className="dim" style={{fontSize:12}}>Odnowienia (liczba pozycji)</div>
+                <div style={{fontSize:24, fontWeight:700}}>{renewEventsCount}</div>
               </div>
             </div>
           </div>
