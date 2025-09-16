@@ -5,6 +5,7 @@ import ImportExport from './components/ImportExport.jsx'
 import JobsPanel from './components/JobsPanel.jsx'
 import InventoryPanel from './components/InventoryPanel.jsx'
 import ReportsPanel from './components/ReportsPanel.jsx'
+import RepairQueuePanel from './components/RepairQueuePanel.jsx'
 
 export default function App(){
   const [db, setDb] = useState(()=> migrate(loadDb()))
@@ -26,7 +27,7 @@ export default function App(){
             <div className="logo"></div>
             <div>
               <div style={{fontWeight:700}}>Serwis Manager</div>
-              <div className="muted" style={{fontSize:12}}>Zlecenia • Magazyn • Raporty</div>
+              <div className="muted" style={{fontSize:12}}>Zlecenia • Kolejka • Magazyn • Raporty</div>
             </div>
           </div>
           <div style={{display:'flex', gap:8}}>
@@ -43,11 +44,13 @@ export default function App(){
           <>
             <div className="tabs">
               <button className={"btn " + (tab==="jobs"?"primary":"")} onClick={()=>setTab("jobs")}>Zlecenia</button>
+              <button className={"btn " + (tab==="queue"?"primary":"")} onClick={()=>setTab("queue")}>Kolejka</button>
               <button className={"btn " + (tab==="inv"?"primary":"")} onClick={()=>setTab("inv")}>Magazyn</button>
               <button className={"btn " + (tab==="rep"?"primary":"")} onClick={()=>setTab("rep")}>Raport</button>
             </div>
 
             {tab==="jobs" && <JobsPanel db={db} setDb={setDb} companyId={companyId} />}
+            {tab==="queue" && <RepairQueuePanel db={db} setDb={setDb} companyId={companyId} />}
             {tab==="inv" && <InventoryPanel db={db} setDb={setDb} companyId={companyId} />}
             {tab==="rep" && <ReportsPanel jobs={jobs} partEvents={partEvents} />}
           </>
