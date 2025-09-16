@@ -69,7 +69,7 @@ export default function InventoryPanel({ db, setDb, companyId }){
 
         <div className="card" style={{marginTop:16}}>
           <div className="header">Stan magazynu</div>
-          <div className="body" style={{overflowX:'auto'}}>
+          <div className="body inventory-table">
             <table>
               <thead><tr><th>Nazwa</th><th>SKU</th><th>Lokalizacja</th><th>Stan</th><th>Min</th><th>Akcje</th></tr></thead>
               <tbody>
