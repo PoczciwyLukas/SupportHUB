@@ -79,7 +79,9 @@ export function migrate(data){
       name: r.name || "",
       sku: r.sku || "",
       qty: Number(r.qty||0),
-      disposition: r.disposition || 'renew',
+      disposition: ["dispose", "renew", "return"].includes(r.disposition)
+        ? r.disposition
+        : "renew",
       createdAt: r.createdAt || r.addedAt || todayISO(),
     }
   }).filter(Boolean)
@@ -105,7 +107,7 @@ export function migrate(data){
     companies: data.companies||[],
     jobs,
     inventory,
-    repairQueue,
-    partEvents
+    repairQueue: repairQueue.length ? repairQueue : (data.repairQueue || []),
+    partEvents: partEvents.length ? partEvents : (data.partEvents || []),
   }
 }
