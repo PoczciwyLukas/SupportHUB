@@ -35,8 +35,8 @@ export default function RepairQueuePanel({ db, setDb, companyId }){
     }
 
     let partEventsUpdate = db.partEvents
-    if(action==='bad' || action==='return'){
-      const type = action==='bad' ? 'dispose' : 'return'
+    if((action==='bad' || action==='return' || action==='ok') && entry.itemId){
+      const type = action==='bad' ? 'dispose' : action==='return' ? 'return' : 'renew'
       partEventsUpdate = [
         ...db.partEvents,
         {

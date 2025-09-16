@@ -96,7 +96,7 @@ export function migrate(data){
     const companyId = ev.companyId || job?.companyId || null
     if(!companyId) return null
     const rawType = ev.type || ev.eventType || ev.disposition
-    const type = rawType === 'return' ? 'return' : 'dispose'
+    const type = rawType === 'return' ? 'return' : rawType === 'renew' ? 'renew' : 'dispose'
     return {
       id: ev.id || uid(),
       companyId,
