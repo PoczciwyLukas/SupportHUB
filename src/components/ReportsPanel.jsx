@@ -45,7 +45,9 @@ export default function ReportsPanel({ jobs, partEvents }){
   const shipOutSum = jobsInRange.reduce((s,j)=> s + Number(j.shipOut||0), 0)
   const insInSum = jobsInRange.reduce((s,j)=> s + Number(j.insIn||0), 0)
   const insOutSum = jobsInRange.reduce((s,j)=> s + Number(j.insOut||0), 0)
-  const shipTotal = shipInSum + shipOutSum + insInSum + insOutSum
+  const shipmentSum = shipInSum + shipOutSum
+  const insuranceSum = insInSum + insOutSum
+  const shipTotal = shipmentSum + insuranceSum
 
   return (
     <div className="grid" style={{gap:16, gridTemplateColumns:'1fr 1fr'}}>
@@ -135,11 +137,9 @@ export default function ReportsPanel({ jobs, partEvents }){
       <div className="card" style={{gridColumn:'1 / -1'}}>
         <div className="header">Koszty przesyłek (PLN)</div>
         <div className="body" style={{fontSize:14}}>
-          <div className="grid" style={{gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:12}}>
-            <div className="card"><div className="body"><div className="dim" style={{fontSize:12}}>Przesyłka IN</div><div style={{fontSize:20, fontWeight:700}}>{fmtPLN(shipInSum)}</div></div></div>
-            <div className="card"><div className="body"><div className="dim" style={{fontSize:12}}>Przesyłka OUT</div><div style={{fontSize:20, fontWeight:700}}>{fmtPLN(shipOutSum)}</div></div></div>
-            <div className="card"><div className="body"><div className="dim" style={{fontSize:12}}>Ubezpieczenie IN</div><div style={{fontSize:20, fontWeight:700}}>{fmtPLN(insInSum)}</div></div></div>
-            <div className="card"><div className="body"><div className="dim" style={{fontSize:12}}>Ubezpieczenie OUT</div><div style={{fontSize:20, fontWeight:700}}>{fmtPLN(insOutSum)}</div></div></div>
+          <div className="grid" style={{gridTemplateColumns:'1fr 1fr', gap:12}}>
+            <div className="card"><div className="body"><div className="dim" style={{fontSize:12}}>Przesyłka</div><div style={{fontSize:20, fontWeight:700}}>{fmtPLN(shipmentSum)}</div></div></div>
+            <div className="card"><div className="body"><div className="dim" style={{fontSize:12}}>Ubezpieczenie</div><div style={{fontSize:20, fontWeight:700}}>{fmtPLN(insuranceSum)}</div></div></div>
           </div>
           <div style={{marginTop:8}}>Razem: <strong>{fmtPLN(shipTotal)}</strong></div>
         </div>
