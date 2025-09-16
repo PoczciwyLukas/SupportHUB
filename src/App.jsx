@@ -17,7 +17,10 @@ export default function App(){
 
   const company = useMemo(()=> db.companies.find(c=>c.id===companyId) || null, [db, companyId])
   const jobs = useMemo(()=> db.jobs.filter(j=>j.companyId===companyId), [db, companyId])
-  const partEvents = useMemo(()=> db.partEvents.filter(e=>e.companyId===companyId), [db, companyId])
+  const partEvents = useMemo(
+    () => (Array.isArray(db.partEvents) ? db.partEvents : []).filter(e => e.companyId === companyId),
+    [db, companyId]
+  )
 
   return (
     <div>
