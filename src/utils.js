@@ -1,18 +1,54 @@
+import { getStoredLanguage, translate } from './i18n.jsx'
+
 export const STORAGE_KEY = "serwis-manager-vite-v1"
 
-export const DEFAULT_STATUSES = [
-  { value: "nowe", label: "Nowe" },
-  { value: "wtrakcie", label: "W trakcie" },
-  { value: "czeka", label: "Czeka na części" },
-  { value: "zakonczone", label: "Zakończone" },
-  { value: "odeslane", label: "Odesłane" },
+const STATUS_DEFS = [
+  { value: "nowe", labelKey: "common.statuses.nowe" },
+  { value: "wtrakcie", labelKey: "common.statuses.wtrakcie" },
+  { value: "czeka", labelKey: "common.statuses.czeka" },
+  { value: "zakonczone", labelKey: "common.statuses.zakonczone" },
+  { value: "odeslane", labelKey: "common.statuses.odeslane" },
 ]
 
-export const JOB_TYPES = [
-  { value: "hub", label: "Naprawa w hubie" },
-  { value: "onsite", label: "Naprawa u klienta" },
-  { value: "upgrade", label: "Upgrade" },
+const JOB_TYPE_DEFS = [
+  { value: "hub", labelKey: "common.jobTypes.hub" },
+  { value: "onsite", labelKey: "common.jobTypes.onsite" },
+  { value: "upgrade", labelKey: "common.jobTypes.upgrade" },
 ]
+
+const DISPOSITION_DEFS = [
+  { value: "keep", labelKey: "common.dispositions.keep" },
+  { value: "dispose", labelKey: "common.dispositions.dispose" },
+  { value: "renew", labelKey: "common.dispositions.renew" },
+  { value: "return", labelKey: "common.dispositions.return" },
+]
+
+function resolveTranslator(resolver){
+  if (typeof resolver === 'function') return resolver
+  const lang = typeof resolver === 'string' && resolver ? resolver : getStoredLanguage()
+  return (key, replacements) => translate(lang, key, replacements)
+}
+
+export function getDefaultStatuses(resolver){
+  const t = resolveTranslator(resolver)
+  return STATUS_DEFS.map(({ value, labelKey }) => ({ value, label: t(labelKey) }))
+}
+
+export function getJobTypes(resolver){
+  const t = resolveTranslator(resolver)
+  return JOB_TYPE_DEFS.map(({ value, labelKey }) => ({ value, label: t(labelKey) }))
+}
+
+export function getDispositionOptions(resolver){
+  const t = resolveTranslator(resolver)
+  return DISPOSITION_DEFS.map(({ value, labelKey }) => ({ value, label: t(labelKey) }))
+}
+
+export function getDispositionLabel(value, resolver){
+  const t = resolveTranslator(resolver)
+  const entry = DISPOSITION_DEFS.find(d => d.value === value)
+  return entry ? t(entry.labelKey) : value
+}
 
 export const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id_" + Date.now() + "_" + Math.random().toString(36).slice(2,8))
 export const todayISO = () => new Date().toISOString()
@@ -22,10 +58,9 @@ export const ensureUrlOrSearch = (s) => {
   if (/^https?:\/\//i.test(v)) return v
   return "https://www.google.com/search?q=" + encodeURIComponent(v)
 }
-export const fmtPLN = (n) => new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" }).format(Number(n||0))
 export const isOverdue = (d) => d ? (new Date() > new Date(d + "T23:59:59")) : false
 
-export function loadDb(withDemo=false){
+export function loadDb(withDemo=false, lang){
   const createEmptyDb = () => ({
     companies: [],
     jobs: [],
@@ -33,22 +68,62 @@ export function loadDb(withDemo=false){
     repairQueue: [],
     partEvents: [],
   })
+  const language = typeof lang === 'string' && lang ? lang : getStoredLanguage()
+  const t = resolveTranslator(language)
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw && !withDemo) return JSON.parse(raw)
   } catch {}
-  const c1 = { id: uid(), name: "Firma A", createdAt: todayISO() }
-  const c2 = { id: uid(), name: "Firma B", createdAt: todayISO() }
+  const c1 = { id: uid(), name: t('demo.companies.first'), createdAt: todayISO() }
+  const c2 = { id: uid(), name: t('demo.companies.second'), createdAt: todayISO() }
   const demo = {
     ...createEmptyDb(),
     companies: [c1, c2],
     jobs: [
-      { id: uid(), companyId: c1.id, orderNumber: "ZL-2025-001", serialNumber:"SN12345", issueDesc:"Nie włącza się", incomingTracking:"DHL-123", outgoingTracking:"", actionsDesc:"Diagnoza zasilania", status:"wtrakcie", jobType:"hub", dueDate: new Date().toISOString().slice(0,10), shipIn:85, shipOut:95, insIn:12, insOut:15, createdAt: todayISO(), updatedAt: todayISO(), inventoryUsed: []},
-      { id: uid(), companyId: c1.id, orderNumber: "ZL-2025-002", serialNumber:"SN55555", issueDesc:"Brak obrazu", incomingTracking:"INPOST-XYZ", outgoingTracking:"", actionsDesc:"Wymiana kondensatora", status:"czeka", jobType:"onsite", dueDate:"", shipIn:0, shipOut:0, insIn:0, insOut:0, createdAt: todayISO(), updatedAt: todayISO(), inventoryUsed: []},
+      {
+        id: uid(),
+        companyId: c1.id,
+        orderNumber: t('demo.jobs.first.orderNumber'),
+        serialNumber: t('demo.jobs.first.serialNumber'),
+        issueDesc: t('demo.jobs.first.issue'),
+        incomingTracking: "DHL-123",
+        outgoingTracking: "",
+        actionsDesc: t('demo.jobs.first.actions'),
+        status:"wtrakcie",
+        jobType:"hub",
+        dueDate: new Date().toISOString().slice(0,10),
+        shipIn:85,
+        shipOut:95,
+        insIn:12,
+        insOut:15,
+        createdAt: todayISO(),
+        updatedAt: todayISO(),
+        inventoryUsed: [],
+      },
+      {
+        id: uid(),
+        companyId: c1.id,
+        orderNumber: t('demo.jobs.second.orderNumber'),
+        serialNumber: t('demo.jobs.second.serialNumber'),
+        issueDesc: t('demo.jobs.second.issue'),
+        incomingTracking: "INPOST-XYZ",
+        outgoingTracking: "",
+        actionsDesc: t('demo.jobs.second.actions'),
+        status:"czeka",
+        jobType:"onsite",
+        dueDate:"",
+        shipIn:0,
+        shipOut:0,
+        insIn:0,
+        insOut:0,
+        createdAt: todayISO(),
+        updatedAt: todayISO(),
+        inventoryUsed: [],
+      },
     ],
     inventory: [
-      { id: uid(), companyId: c1.id, sku:"KND-100", name:"Kondensator 100uF", qty:12, location:"A1", minQty:5, createdAt: todayISO()},
-      { id: uid(), companyId: c1.id, sku:"PSU-12V", name:"Zasilacz 12V", qty:3, location:"B2", minQty:2, createdAt: todayISO()},
+      { id: uid(), companyId: c1.id, sku:"KND-100", name:t('demo.inventory.capacitor'), qty:12, location:"A1", minQty:5, createdAt: todayISO()},
+      { id: uid(), companyId: c1.id, sku:"PSU-12V", name:t('demo.inventory.psu'), qty:3, location:"B2", minQty:2, createdAt: todayISO()},
     ],
   }
   return withDemo ? demo : createEmptyDb()

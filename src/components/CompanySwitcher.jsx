@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { todayISO, uid } from '../utils'
+import { useLanguage } from '../i18n.jsx'
 
 export default function CompanySwitcher({ db, setDb, companyId, setCompanyId }){
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
+  const { t } = useLanguage()
 
   function addCompany(){
     if(!name.trim()) return
@@ -15,7 +17,7 @@ export default function CompanySwitcher({ db, setDb, companyId, setCompanyId }){
   }
   function removeCurrent(){
     if(db.companies.length<=1) return
-    if(!confirm("Usunąć bieżącą firmę? Z danymi!")) return
+    if(!confirm(t('companySwitcher.confirmDelete'))) return
     const newCompanies = db.companies.filter(c=>c.id!==companyId)
     const newCompanyId = newCompanies[0]?.id || ""
     setCompanyId(newCompanyId)
@@ -34,16 +36,16 @@ export default function CompanySwitcher({ db, setDb, companyId, setCompanyId }){
       <select className="input" value={companyId} onChange={(e)=>setCompanyId(e.target.value)} style={{width:220}}>
         {db.companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
       </select>
-      <button className="btn" onClick={()=>setOpen(v=>!v)}>Firmy ▾</button>
+      <button className="btn" onClick={()=>setOpen(v=>!v)}>{t('companySwitcher.button')}</button>
       {open && (
         <div className="card" style={{position:'absolute', right:0, top:'110%', width:280}}>
           <div className="body">
-            <div className="muted" style={{fontSize:12}}>Zarządzaj</div>
-            <div className="label">Nazwa firmy</div>
-            <input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder="np. ACME Sp. z o.o."/>
+            <div className="muted" style={{fontSize:12}}>{t('companySwitcher.manage')}</div>
+            <div className="label">{t('companySwitcher.nameLabel')}</div>
+            <input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder={t('companySwitcher.placeholder')}/>
             <div style={{display:'flex', gap:8, marginTop:12}}>
-              <button className="btn primary" onClick={addCompany}>Dodaj</button>
-              {db.companies.length>1 && <button className="btn danger" onClick={removeCurrent}>Usuń bieżącą</button>}
+              <button className="btn primary" onClick={addCompany}>{t('companySwitcher.add')}</button>
+              {db.companies.length>1 && <button className="btn danger" onClick={removeCurrent}>{t('companySwitcher.removeCurrent')}</button>}
             </div>
           </div>
         </div>
