@@ -137,13 +137,29 @@ export function migrate(data){
     jobType: j.jobType || "hub",
     shipIn: Number(j.shipIn||0), shipOut: Number(j.shipOut||0),
     insIn: Number(j.insIn||0), insOut: Number(j.insOut||0),
-    inventoryUsed: (j.inventoryUsed||[]).map(u => ({
-      ...u,
-      qty: Number(u.qty||0),
-      disposition: ["dispose", "renew", "return"].includes(u.disposition)
+    inventoryUsed: (j.inventoryUsed||[]).map(u => {
+      const disposition = ["dispose", "renew", "return"].includes(u.disposition)
         ? u.disposition
-        : "renew",
-    })),
+        : "renew"
+      const base = {
+        ...u,
+        qty: Number(u.qty||0),
+        disposition,
+      }
+      if(disposition === 'renew' || disposition === 'return'){
+        const resolved = u.queueResolved === true
+        const meta = resolved && u.queueResolution && typeof u.queueResolution === 'object'
+          ? { ...u.queueResolution }
+          : null
+        return {
+          ...base,
+          queueResolved: resolved,
+          queueResolution: resolved ? meta : null,
+        }
+      }
+      const { queueResolved, queueResolution, ...rest } = base
+      return rest
+    }),
   }))
   const inventory = (data.inventory||[]).map(({ toReturnUSA, ...i }) => ({ ...i }))
   const jobMap = new Map(jobs.map(j => [j.id, j]))
