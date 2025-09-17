@@ -13,6 +13,10 @@ import { useLanguage } from '../i18n.jsx'
 
 const DEFAULT_DISPOSITION = 'dispose'
 
+function requiresQueueResolution(disposition){
+  return disposition === 'renew' || disposition === 'return'
+}
+
 export default function JobsPanel({ db, setDb, companyId }){
   const { t, locale, formatCurrency, formatDate, formatDateTime } = useLanguage()
   const emptyForm = {
@@ -130,14 +134,14 @@ export default function JobsPanel({ db, setDb, companyId }){
 
   function openUsage(j){
     setEditId(j.id)
-    setInvUsage(j.inventoryUsed||[])
+    setInvUsage((j.inventoryUsed||[]).map(normalizeUsageEntry))
     setUsageOpen(true)
   }
 
   function applyUsage(){
     const job = db.jobs.find(j=>j.id===editId)
-    const before = job?.inventoryUsed||[]
-    const after = invUsage
+    const before = (job?.inventoryUsed||[]).map(normalizeUsageEntry)
+    const after = invUsage.map(normalizeUsageEntry)
     const delta = new Map()
     for(const u of before) delta.set(u.itemId, (delta.get(u.itemId)||0) - Number(u.qty||0))
     for(const u of after) delta.set(u.itemId, (delta.get(u.itemId)||0) + Number(u.qty||0))
@@ -152,7 +156,7 @@ export default function JobsPanel({ db, setDb, companyId }){
     const partAdds = []
     for(const u of after){
       const qty = Number(u.qty||0)
-      if(u.disposition === 'renew' || u.disposition === 'return'){
+      if((u.disposition === 'renew' || u.disposition === 'return') && u.queueResolved !== true){
         repairAdds.push({ id: uid(), jobId: editId, itemId: u.itemId, name: u.name, sku: u.sku, qty, disposition: u.disposition, companyId, createdAt: todayISO() })
       } else if(u.disposition === 'dispose'){
         partAdds.push({ id: uid(), companyId, jobId: editId, itemId: u.itemId, sku: u.sku, name: u.name, qty, type: 'dispose', eventDate: todayISO() })
@@ -408,13 +412,28 @@ function InventoryUsageEditor({ usage, setUsage, inventory, dispositions, dispos
   const [disp, setDisp] = useState(DEFAULT_DISPOSITION)
 
   function add(){
-    if(!itemId || qty<1 || !disp) return
+    const quantityToAdd = Number(qty||0)
+    if(!itemId || quantityToAdd<1 || !disp) return
     const item = inventory.find(i=>i.id===itemId)
     if(!item) return
     setUsage(prev => {
-      const ex = prev.find(u => u.itemId===itemId && u.disposition===disp)
-      if(ex) return prev.map(u => (u.itemId===itemId && u.disposition===disp) ? { ...u, qty: u.qty + qty } : u)
-      return [...prev, { itemId, sku:item.sku, name:item.name, qty, disposition: disp }]
+      const existingIndex = prev.findIndex(u => u.itemId===itemId && u.disposition===disp)
+      if(existingIndex>=0){
+        return prev.map((u, idx) => {
+          if(idx !== existingIndex) return u
+          const nextQty = Number(u.qty||0) + quantityToAdd
+          if(requiresQueueResolution(disp)){
+            return { ...u, qty: nextQty, queueResolved: false, queueResolution: null }
+          }
+          return { ...u, qty: nextQty }
+        })
+      }
+      const next = { itemId, sku:item.sku, name:item.name, qty: quantityToAdd, disposition: disp }
+      if(requiresQueueResolution(disp)){
+        next.queueResolved = false
+        next.queueResolution = null
+      }
+      return [...prev, next]
     })
     setItemId("")
     setQty(1)
@@ -493,5 +512,23 @@ function InventoryUsageEditor({ usage, setUsage, inventory, dispositions, dispos
       </div>
     </div>
   )
+}
+
+function normalizeUsageEntry(entry){
+  if(!entry) return entry
+  const base = { ...entry, qty: Number(entry.qty||0) }
+  if(requiresQueueResolution(base.disposition)){
+    const resolved = base.queueResolved === true
+    const meta = resolved && base.queueResolution && typeof base.queueResolution === 'object'
+      ? { ...base.queueResolution }
+      : null
+    return {
+      ...base,
+      queueResolved: resolved,
+      queueResolution: resolved ? meta : null,
+    }
+  }
+  const { queueResolved, queueResolution, ...rest } = base
+  return rest
 }
 

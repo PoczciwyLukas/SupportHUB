@@ -7,6 +7,8 @@ const DISPOSITION_ACTIONS = {
   return: ['return'],
 }
 
+const TRACKED_QUEUE_DISPOSITIONS = new Set(['renew', 'return'])
+
 export default function RepairQueuePanel({ db, setDb, companyId }){
   const { t, formatDateTime } = useLanguage()
   const repairQueue = useMemo(() => db.repairQueue.filter(r => r.companyId === companyId), [db, companyId])
@@ -57,15 +59,30 @@ export default function RepairQueuePanel({ db, setDb, companyId }){
 
     let jobsUpdate = db.jobs
     if((action==='ok' || action==='bad' || action==='return') && entry.jobId && entry.itemId){
+      const resolutionTimestamp = todayISO()
       jobsUpdate = db.jobs.map(job => {
         if(job.id !== entry.jobId) return job
         const usage = Array.isArray(job.inventoryUsed) ? job.inventoryUsed : []
-        const hasMatchingUsage = usage.some(u => (
-          u.itemId === entry.itemId &&
-          u.disposition === entry.disposition
-        ))
-        if(!hasMatchingUsage) return job
-        return { ...job, updatedAt: todayISO() }
+        let changed = false
+        const nextUsage = usage.map(u => {
+          if(u.itemId !== entry.itemId || u.disposition !== entry.disposition) return u
+          if(!TRACKED_QUEUE_DISPOSITIONS.has(u.disposition)) return u
+          changed = true
+          const baseMeta = (u.queueResolution && typeof u.queueResolution === 'object') ? u.queueResolution : {}
+          return {
+            ...u,
+            queueResolved: true,
+            queueResolution: {
+              ...baseMeta,
+              action,
+              resolvedAt: resolutionTimestamp,
+              queueId: entry.id,
+              qty: Number(entry.qty||0),
+            },
+          }
+        })
+        if(!changed) return job
+        return { ...job, inventoryUsed: nextUsage, updatedAt: resolutionTimestamp }
       })
     }
 
