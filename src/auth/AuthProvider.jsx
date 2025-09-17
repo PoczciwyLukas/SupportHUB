@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
@@ -22,6 +23,4 @@ export function AuthProvider({ children }){
   return <AuthCtx.Provider value={{ user, loading }}>{children}</AuthCtx.Provider>
 }
 
-export function useAuth(){
-  return useContext(AuthCtx)
-}
+export function useAuth(){ return useContext(AuthCtx) }
