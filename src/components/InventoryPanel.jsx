@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react'
 import RepairQueuePanel from './RepairQueuePanel.jsx'
 import { todayISO, uid } from '../utils'
+import { useLanguage } from '../i18n.jsx'
 
 export default function InventoryPanel({ db, setDb, companyId }){
   const [form, setForm] = useState({ sku:"", name:"", qty:1, location:"", minQty:0 })
   const [search, setSearch] = useState("")
+  const { t } = useLanguage()
   const items = useMemo(()=> db.inventory.filter(i=>i.companyId===companyId), [db, companyId])
   const shown = useMemo(()=>{
     let arr=[...items]
@@ -16,13 +18,13 @@ export default function InventoryPanel({ db, setDb, companyId }){
   }, [items, search])
 
   function addItem(){
-    if(!form.name.trim()) return alert("Podaj nazwę pozycji")
+    if(!form.name.trim()) return alert(t('inventory.alerts.nameRequired'))
     const it = { id: uid(), companyId, sku: form.sku.trim(), name: form.name.trim(), qty: Math.max(0, Number(form.qty)||0), location: form.location.trim(), minQty: Math.max(0, Number(form.minQty)||0), createdAt: todayISO() }
     setDb({ ...db, inventory: [it, ...db.inventory] })
     setForm({ sku:"", name:"", qty:1, location:"", minQty:0 })
   }
   function removeItem(id){
-    if(!confirm("Usunąć pozycję z magazynu?")) return
+    if(!confirm(t('inventory.confirm.delete'))) return
     setDb({ ...db, inventory: db.inventory.filter(i=>i.id!==id) })
   }
   function adjustQty(id, delta){
@@ -32,46 +34,46 @@ export default function InventoryPanel({ db, setDb, companyId }){
   return (
     <div className="layout">
       <div className="card">
-        <div className="header">Dodaj pozycję</div>
+        <div className="header">{t('inventory.formTitle')}</div>
         <div className="body">
-          <div className="label">Nazwa *</div>
-          <input className="input" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} placeholder="np. Moduł A / Kondensator 100uF"/>
+          <div className="label">{t('inventory.nameLabel')}</div>
+          <input className="input" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} placeholder={t('inventory.namePlaceholder')}/>
           <div className="grid col-2">
             <div>
-              <div className="label">SKU / indeks</div>
-              <input className="input" value={form.sku} onChange={e=>setForm({...form, sku:e.target.value})} placeholder="np. KND-100"/>
+              <div className="label">{t('inventory.skuLabel')}</div>
+              <input className="input" value={form.sku} onChange={e=>setForm({...form, sku:e.target.value})} placeholder={t('inventory.skuPlaceholder')}/>
             </div>
             <div>
-              <div className="label">Ilość początkowa</div>
+              <div className="label">{t('inventory.qtyLabel')}</div>
               <input type="number" min="0" className="input" value={form.qty} onChange={e=>setForm({...form, qty:Number(e.target.value)})}/>
             </div>
           </div>
           <div className="grid col-2" style={{alignItems:'center'}}>
             <div>
-              <div className="label">Lokalizacja</div>
-              <input className="input" value={form.location} onChange={e=>setForm({...form, location:e.target.value})} placeholder="np. Regał A3"/>
+              <div className="label">{t('inventory.locationLabel')}</div>
+              <input className="input" value={form.location} onChange={e=>setForm({...form, location:e.target.value})} placeholder={t('inventory.locationPlaceholder')}/>
             </div>
             <div>
-              <div className="label">Stan minimalny</div>
+              <div className="label">{t('inventory.minQtyLabel')}</div>
               <input type="number" min="0" className="input" value={form.minQty} onChange={e=>setForm({...form, minQty:Number(e.target.value)})}/>
             </div>
           </div>
-          <button className="btn primary" onClick={addItem} style={{marginTop:10}}>Dodaj do magazynu</button>
+          <button className="btn primary" onClick={addItem} style={{marginTop:10}}>{t('inventory.addButton')}</button>
         </div>
       </div>
 
       <div>
         <div className="card">
           <div className="body">
-            <input className="input" placeholder="Szukaj w magazynie" value={search} onChange={e=>setSearch(e.target.value)} />
+            <input className="input" placeholder={t('inventory.searchPlaceholder')} value={search} onChange={e=>setSearch(e.target.value)} />
           </div>
         </div>
 
         <div className="card" style={{marginTop:16}}>
-          <div className="header">Stan magazynu</div>
+          <div className="header">{t('inventory.tableTitle')}</div>
           <div className="body inventory-table">
             <table>
-              <thead><tr><th>Nazwa</th><th>SKU</th><th>Lokalizacja</th><th>Stan</th><th>Min</th><th>Akcje</th></tr></thead>
+              <thead><tr><th>{t('inventory.columns.name')}</th><th>{t('inventory.columns.sku')}</th><th>{t('inventory.columns.location')}</th><th>{t('inventory.columns.qty')}</th><th>{t('inventory.columns.min')}</th><th>{t('inventory.columns.actions')}</th></tr></thead>
               <tbody>
                 {shown.map(i => (
                   <tr key={i.id} className={i.qty <= i.minQty ? "low" : ""}>
@@ -81,20 +83,20 @@ export default function InventoryPanel({ db, setDb, companyId }){
                     <td>
                       <span style={{display:'inline-flex', alignItems:'center', gap:8}}>
                         {i.qty}
-                        {i.qty <= i.minQty && <span className="badge">Niski stan</span>}
+                        {i.qty <= i.minQty && <span className="badge">{t('inventory.lowStockBadge')}</span>}
                       </span>
                     </td>
                     <td>{i.minQty}</td>
                     <td>
                       <div className="row-actions">
-                        <button className="btn" onClick={()=>adjustQty(i.id, +1)}>+1</button>
-                        <button className="btn" onClick={()=>adjustQty(i.id, -1)}>-1</button>
-                        <button className="btn danger" onClick={()=>removeItem(i.id)}>Usuń</button>
+                        <button className="btn" onClick={()=>adjustQty(i.id, +1)}>{t('inventory.increment')}</button>
+                        <button className="btn" onClick={()=>adjustQty(i.id, -1)}>{t('inventory.decrement')}</button>
+                        <button className="btn danger" onClick={()=>removeItem(i.id)}>{t('inventory.remove')}</button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {shown.length===0 && <tr><td colSpan="6" style={{textAlign:'center', padding:'16px'}} className="dim">Magazyn pusty</td></tr>}
+                {shown.length===0 && <tr><td colSpan="6" style={{textAlign:'center', padding:'16px'}} className="dim">{t('inventory.empty')}</td></tr>}
               </tbody>
             </table>
           </div>

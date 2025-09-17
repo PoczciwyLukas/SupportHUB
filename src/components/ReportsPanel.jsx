@@ -1,17 +1,24 @@
 import React, { useMemo, useState } from 'react'
-import { DEFAULT_STATUSES, JOB_TYPES, fmtPLN } from '../utils'
-
-const DISPOSITION_LABELS = {
-  keep: 'pozostaje u mnie',
-  dispose: 'utylizacja',
-  renew: 'odnowienie',
-  return: 'odesłanie do producenta',
-}
+import {
+  getDefaultStatuses,
+  getDispositionLabel,
+  getDispositionOptions,
+  getJobTypes,
+} from '../utils'
+import { useLanguage } from '../i18n.jsx'
 
 export default function ReportsPanel({ jobs, partEvents }){
+  const { t, formatCurrency, formatDate, formatDateTime } = useLanguage()
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
   const [activeModal, setActiveModal] = useState(null)
+
+  const statuses = useMemo(() => getDefaultStatuses(t), [t])
+  const jobTypes = useMemo(() => getJobTypes(t), [t])
+  const dispositions = useMemo(() => getDispositionOptions(t), [t])
+  const statusMap = useMemo(() => new Map(statuses.map(s => [s.value, s.label])), [statuses])
+  const jobTypeMap = useMemo(() => new Map(jobTypes.map(s => [s.value, s.label])), [jobTypes])
+  const dispositionMap = useMemo(() => new Map(dispositions.map(d => [d.value, d.label])), [dispositions])
 
   const closeModal = () => setActiveModal(null)
 
@@ -30,24 +37,24 @@ export default function ReportsPanel({ jobs, partEvents }){
 
   const jobsInRange = useMemo(()=>{
     const f = from ? new Date(from + "T00:00:00").getTime() : -Infinity
-    const t = to ? new Date(to + "T23:59:59").getTime() : Infinity
+    const tMax = to ? new Date(to + "T23:59:59").getTime() : Infinity
     return jobs.filter(j => {
       const ts = new Date(j.createdAt).getTime()
-      return ts >= f && ts <= t
+      return ts >= f && ts <= tMax
     })
   }, [jobs, from, to])
 
   const eventsInRange = useMemo(()=>{
     const f = from ? new Date(from + "T00:00:00").getTime() : -Infinity
-    const t = to ? new Date(to + "T23:59:59").getTime() : Infinity
+    const tMax = to ? new Date(to + "T23:59:59").getTime() : Infinity
     return scopedPartEvents.filter(e => {
       const ts = new Date(e.eventDate).getTime()
-      return ts >= f && ts <= t
+      return ts >= f && ts <= tMax
     })
   }, [scopedPartEvents, from, to])
 
   const jobStatusGroups = useMemo(() => {
-    const groups = DEFAULT_STATUSES.reduce((acc, status) => {
+    const groups = statuses.reduce((acc, status) => {
       acc[status.value] = []
       return acc
     }, {})
@@ -57,10 +64,10 @@ export default function ReportsPanel({ jobs, partEvents }){
       groups[key].push(job)
     }
     return groups
-  }, [jobsInRange])
+  }, [jobsInRange, statuses])
 
   const jobTypeGroups = useMemo(() => {
-    const groups = JOB_TYPES.reduce((acc, type) => {
+    const groups = jobTypes.reduce((acc, type) => {
       acc[type.value] = []
       return acc
     }, {})
@@ -70,23 +77,23 @@ export default function ReportsPanel({ jobs, partEvents }){
       groups[key].push(job)
     }
     return groups
-  }, [jobsInRange])
+  }, [jobsInRange, jobTypes])
 
   const totalJobs = jobsInRange.length
   const byStatus = useMemo(() => (
-    DEFAULT_STATUSES.map(s => ({
+    statuses.map(s => ({
       status: s.value,
       label: s.label,
       count: (jobStatusGroups[s.value] || []).length
     }))
-  ), [jobStatusGroups])
+  ), [statuses, jobStatusGroups])
   const byType = useMemo(() => (
-    JOB_TYPES.map(t => ({
-      type: t.value,
-      label: t.label,
-      count: (jobTypeGroups[t.value] || []).length
+    jobTypes.map(tpl => ({
+      type: tpl.value,
+      label: tpl.label,
+      count: (jobTypeGroups[tpl.value] || []).length
     }))
-  ), [jobTypeGroups])
+  ), [jobTypes, jobTypeGroups])
 
   const allUsages = useMemo(() => (
     jobsInRange.flatMap(job => (job.inventoryUsed || []).map(u => ({
@@ -149,31 +156,26 @@ export default function ReportsPanel({ jobs, partEvents }){
     if (!activeModal) return { title: '', items: [] }
 
     if (activeModal.section === 'jobs') {
-      const statusLabelMap = DEFAULT_STATUSES.reduce((acc, status) => {
-        acc[status.value] = status.label
-        return acc
-      }, {})
-      const typeLabelMap = JOB_TYPES.reduce((acc, type) => {
-        acc[type.value] = type.label
-        return acc
-      }, {})
       const source = activeModal.mode === 'status'
         ? (jobStatusGroups[activeModal.filter] || [])
         : (jobTypeGroups[activeModal.filter] || [])
       const items = source.map(job => {
-        const jobStatusLabel = statusLabelMap[job.status] || job.status || 'Brak statusu'
-        const jobTypeLabel = typeLabelMap[job.jobType || 'hub'] || job.jobType || 'hub'
-        const createdAt = job.createdAt ? new Date(job.createdAt).toLocaleString('pl-PL') : 'Brak daty'
-        const secondary = [`Status: ${jobStatusLabel}`, `Typ: ${jobTypeLabel}`].join(' • ')
+        const jobStatusLabel = statusMap.get(job.status) || job.status || t('reports.modal.jobNoStatus')
+        const jobTypeLabel = jobTypeMap.get(job.jobType || 'hub') || job.jobType || 'hub'
+        const createdAt = job.createdAt ? (formatDateTime(job.createdAt) || formatDateTime(new Date(job.createdAt))) : ''
+        const subtitle = [
+          t('reports.modal.jobStatusPrefix', { status: jobStatusLabel }),
+          t('reports.modal.jobTypePrefix', { type: jobTypeLabel })
+        ].join(' • ')
         return {
           id: job.id,
-          title: job.orderNumber || job.serialNumber || `Zlecenie ${job.id}`,
-          subtitle: secondary,
-          meta: `Utworzono: ${createdAt}`,
+          title: job.orderNumber || job.serialNumber || t('reports.modal.jobFallbackTitle', { id: job.id }),
+          subtitle,
+          meta: createdAt ? t('reports.modal.jobCreatedAt', { date: createdAt }) : null,
         }
       })
       return {
-        title: `Zlecenia — ${activeModal.label}`,
+        title: t('reports.modal.jobsTitle', { label: activeModal.label }),
         items,
       }
     }
@@ -183,16 +185,21 @@ export default function ReportsPanel({ jobs, partEvents }){
         const usageItems = (usageByDisposition[activeModal.filter] || []).map((usage, idx) => {
           const relatedJob = jobMap.get(usage.jobId)
           const jobLabel = relatedJob?.orderNumber || usage.orderNumber || relatedJob?.serialNumber || usage.jobId
-          const createdAt = usage.jobCreatedAt ? new Date(usage.jobCreatedAt).toLocaleDateString('pl-PL') : null
+          const createdAt = usage.jobCreatedAt ? (formatDate(usage.jobCreatedAt) || formatDate(new Date(usage.jobCreatedAt))) : ''
+          const dispositionLabel = dispositionMap.get(usage.disposition) || getDispositionLabel(usage.disposition, t)
+          const metaParts = [
+            jobLabel ? t('reports.modal.partJob', { job: jobLabel }) : null,
+            createdAt ? t('reports.modal.partDate', { date: createdAt }) : null,
+          ].filter(Boolean)
           return {
             id: `${usage.itemId || usage.sku || idx}-${usage.jobId || idx}-${usage.disposition}`,
-            title: usage.name || usage.sku || 'Nieznana część',
-            subtitle: `Ilość: ${usage.qty} • Los: ${DISPOSITION_LABELS[usage.disposition] || usage.disposition}`,
-            meta: jobLabel ? `Zlecenie: ${jobLabel}${createdAt ? ` • Data: ${createdAt}` : ''}` : null,
+            title: usage.name || usage.sku || t('reports.modal.partUnknown'),
+            subtitle: `${t('reports.modal.partQty', { qty: usage.qty })} • ${t('reports.modal.partDisposition', { label: dispositionLabel })}`,
+            meta: metaParts.join(' • ') || null,
           }
         })
         return {
-          title: `Części — ${activeModal.label}`,
+          title: t('reports.modal.partsTitle', { label: activeModal.label }),
           items: usageItems,
         }
       }
@@ -200,23 +207,27 @@ export default function ReportsPanel({ jobs, partEvents }){
         const eventItems = (eventsByType[activeModal.filter] || []).map(event => {
           const relatedJob = event.jobId ? jobMap.get(event.jobId) : null
           const jobLabel = relatedJob?.orderNumber || relatedJob?.serialNumber || event.jobId
-          const dateLabel = event.eventDate ? new Date(event.eventDate).toLocaleString('pl-PL') : null
+          const dateLabel = event.eventDate ? (formatDateTime(event.eventDate) || formatDateTime(new Date(event.eventDate))) : ''
+          const metaParts = [
+            jobLabel ? t('reports.modal.partJob', { job: jobLabel }) : null,
+            dateLabel ? t('reports.modal.partDate', { date: dateLabel }) : null,
+          ].filter(Boolean)
           return {
             id: event.id,
-            title: event.name || event.sku || 'Nieznana część',
-            subtitle: `Ilość: ${event.qty}`,
-            meta: [jobLabel ? `Zlecenie: ${jobLabel}` : null, dateLabel ? `Data: ${dateLabel}` : null].filter(Boolean).join(' • ') || null,
+            title: event.name || event.sku || t('reports.modal.partUnknown'),
+            subtitle: t('reports.modal.partQty', { qty: event.qty }),
+            meta: metaParts.join(' • ') || null,
           }
         })
         return {
-          title: `Części — ${activeModal.label}`,
+          title: t('reports.modal.partsTitle', { label: activeModal.label }),
           items: eventItems,
         }
       }
     }
 
     return { title: activeModal.label || '', items: [] }
-  }, [activeModal, eventsByType, jobMap, jobStatusGroups, jobTypeGroups, usageByDisposition])
+  }, [activeModal, eventsByType, jobMap, jobStatusGroups, jobTypeGroups, usageByDisposition, statusMap, jobTypeMap, dispositionMap, formatDate, formatDateTime, t])
 
   const handleCardKeyDown = (event, payload) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -225,26 +236,29 @@ export default function ReportsPanel({ jobs, partEvents }){
     }
   }
 
+  const keptLabel = dispositionMap.get('keep') || getDispositionLabel('keep', t)
+  const disposedLabel = dispositionMap.get('dispose') || getDispositionLabel('dispose', t)
+
   return (
     <div className="dashboard-grid">
       <div className="card dashboard-grid__full">
-        <div className="header">Zakres dat</div>
+        <div className="header">{t('reports.dateRangeTitle')}</div>
         <div className="body grid col-2">
           <div>
-            <div className="label">Od</div>
+            <div className="label">{t('reports.fromLabel')}</div>
             <input type="date" className="input" value={from} onChange={e=>setFrom(e.target.value)} />
           </div>
           <div>
-            <div className="label">Do</div>
+            <div className="label">{t('reports.toLabel')}</div>
             <input type="date" className="input" value={to} onChange={e=>setTo(e.target.value)} />
           </div>
         </div>
       </div>
 
       <div className="card">
-        <div className="header">Podsumowanie zleceń</div>
+        <div className="header">{t('reports.jobsSummaryTitle')}</div>
         <div className="body">
-          <div>Łącznie (w zakresie): <strong>{totalJobs}</strong></div>
+          <div>{t('reports.jobsSummary.totalPrefix')} <strong>{totalJobs}</strong></div>
           <div className="summary-grid summary-grid--spaced">
             {byStatus.map(s => (
               <div
@@ -264,18 +278,18 @@ export default function ReportsPanel({ jobs, partEvents }){
           </div>
           <div style={{height:1, background:'#e2e8f0', margin:'12px 0'}}></div>
           <div className="summary-grid summary-grid--spaced">
-            {byType.map(t => (
+            {byType.map(tpl => (
               <div
-                key={t.type}
+                key={tpl.type}
                 className="card card--actionable"
                 role="button"
                 tabIndex={0}
-                onClick={() => setActiveModal({ section: 'jobs', mode: 'type', label: t.label, filter: t.type })}
-                onKeyDown={event => handleCardKeyDown(event, { section: 'jobs', mode: 'type', label: t.label, filter: t.type })}
+                onClick={() => setActiveModal({ section: 'jobs', mode: 'type', label: tpl.label, filter: tpl.type })}
+                onKeyDown={event => handleCardKeyDown(event, { section: 'jobs', mode: 'type', label: tpl.label, filter: tpl.type })}
               >
                 <div className="body">
-                  <div className="dim" style={{fontSize:12}}>{t.label}</div>
-                  <div style={{fontSize:24, fontWeight:700}}>{t.count}</div>
+                  <div className="dim" style={{fontSize:12}}>{tpl.label}</div>
+                  <div style={{fontSize:24, fontWeight:700}}>{tpl.count}</div>
                 </div>
               </div>
             ))}
@@ -284,19 +298,19 @@ export default function ReportsPanel({ jobs, partEvents }){
       </div>
 
       <div className="card">
-        <div className="header">Podsumowanie części</div>
+        <div className="header">{t('reports.partsSummaryTitle')}</div>
         <div className="body">
-          <div>Łącznie użytych (szt.): <strong>{totalParts}</strong></div>
+          <div>{t('reports.partsSummary.totalPrefix')} <strong>{totalParts}</strong></div>
           <div className="summary-grid summary-grid--auto summary-grid--spaced">
             <div
               className="card card--actionable"
               role="button"
               tabIndex={0}
-              onClick={() => setActiveModal({ section: 'parts', mode: 'usage', label: 'Pozostały u mnie', filter: 'keep' })}
-              onKeyDown={event => handleCardKeyDown(event, { section: 'parts', mode: 'usage', label: 'Pozostały u mnie', filter: 'keep' })}
+              onClick={() => setActiveModal({ section: 'parts', mode: 'usage', label: keptLabel, filter: 'keep' })}
+              onKeyDown={event => handleCardKeyDown(event, { section: 'parts', mode: 'usage', label: keptLabel, filter: 'keep' })}
             >
               <div className="body">
-                <div className="dim" style={{fontSize:12}}>Pozostały u mnie</div>
+                <div className="dim" style={{fontSize:12}}>{keptLabel}</div>
                 <div style={{fontSize:24, fontWeight:700}}>{keptParts}</div>
               </div>
             </div>
@@ -304,11 +318,11 @@ export default function ReportsPanel({ jobs, partEvents }){
               className="card card--actionable"
               role="button"
               tabIndex={0}
-              onClick={() => setActiveModal({ section: 'parts', mode: 'usage', label: 'Utylizacja', filter: 'dispose' })}
-              onKeyDown={event => handleCardKeyDown(event, { section: 'parts', mode: 'usage', label: 'Utylizacja', filter: 'dispose' })}
+              onClick={() => setActiveModal({ section: 'parts', mode: 'usage', label: disposedLabel, filter: 'dispose' })}
+              onKeyDown={event => handleCardKeyDown(event, { section: 'parts', mode: 'usage', label: disposedLabel, filter: 'dispose' })}
             >
               <div className="body">
-                <div className="dim" style={{fontSize:12}}>Utylizacja</div>
+                <div className="dim" style={{fontSize:12}}>{disposedLabel}</div>
                 <div style={{fontSize:24, fontWeight:700}}>{disposedParts}</div>
               </div>
             </div>
@@ -318,11 +332,11 @@ export default function ReportsPanel({ jobs, partEvents }){
               className="card card--actionable"
               role="button"
               tabIndex={0}
-              onClick={() => setActiveModal({ section: 'parts', mode: 'event', label: 'Utylizacje', filter: 'dispose' })}
-              onKeyDown={event => handleCardKeyDown(event, { section: 'parts', mode: 'event', label: 'Utylizacje', filter: 'dispose' })}
+              onClick={() => setActiveModal({ section: 'parts', mode: 'event', label: t('reports.partsSummary.disposalEventsLabel'), filter: 'dispose' })}
+              onKeyDown={event => handleCardKeyDown(event, { section: 'parts', mode: 'event', label: t('reports.partsSummary.disposalEventsLabel'), filter: 'dispose' })}
             >
               <div className="body">
-                <div className="dim" style={{fontSize:12}}>Utylizacje</div>
+                <div className="dim" style={{fontSize:12}}>{t('reports.partsSummary.disposalEventsLabel')}</div>
                 <div style={{fontSize:24, fontWeight:700}}>{disposedEvents}</div>
               </div>
             </div>
@@ -330,11 +344,11 @@ export default function ReportsPanel({ jobs, partEvents }){
               className="card card--actionable"
               role="button"
               tabIndex={0}
-              onClick={() => setActiveModal({ section: 'parts', mode: 'event', label: 'Odesłania', filter: 'return' })}
-              onKeyDown={event => handleCardKeyDown(event, { section: 'parts', mode: 'event', label: 'Odesłania', filter: 'return' })}
+              onClick={() => setActiveModal({ section: 'parts', mode: 'event', label: t('reports.partsSummary.returnEventsLabel'), filter: 'return' })}
+              onKeyDown={event => handleCardKeyDown(event, { section: 'parts', mode: 'event', label: t('reports.partsSummary.returnEventsLabel'), filter: 'return' })}
             >
               <div className="body">
-                <div className="dim" style={{fontSize:12}}>Odesłania</div>
+                <div className="dim" style={{fontSize:12}}>{t('reports.partsSummary.returnEventsLabel')}</div>
                 <div style={{fontSize:24, fontWeight:700}}>{returnedEvents}</div>
               </div>
             </div>
@@ -342,11 +356,11 @@ export default function ReportsPanel({ jobs, partEvents }){
               className="card card--actionable"
               role="button"
               tabIndex={0}
-              onClick={() => setActiveModal({ section: 'parts', mode: 'event', label: 'Odnowienia', filter: 'renew' })}
-              onKeyDown={event => handleCardKeyDown(event, { section: 'parts', mode: 'event', label: 'Odnowienia', filter: 'renew' })}
+              onClick={() => setActiveModal({ section: 'parts', mode: 'event', label: t('reports.partsSummary.renewEventsLabel'), filter: 'renew' })}
+              onKeyDown={event => handleCardKeyDown(event, { section: 'parts', mode: 'event', label: t('reports.partsSummary.renewEventsLabel'), filter: 'renew' })}
             >
               <div className="body">
-                <div className="dim" style={{fontSize:12}}>Odnowienia (liczba pozycji)</div>
+                <div className="dim" style={{fontSize:12}}>{t('reports.partsSummary.renewEventsLabel')}</div>
                 <div style={{fontSize:24, fontWeight:700}}>{renewEventsCount}</div>
               </div>
             </div>
@@ -355,13 +369,13 @@ export default function ReportsPanel({ jobs, partEvents }){
       </div>
 
       <div className="card dashboard-grid__full">
-        <div className="header">Koszty przesyłek (PLN)</div>
+        <div className="header">{t('reports.shipmentsTitle')}</div>
         <div className="body" style={{fontSize:14}}>
           <div className="grid" style={{gridTemplateColumns:'1fr 1fr', gap:12}}>
-            <div className="card"><div className="body"><div className="dim" style={{fontSize:12}}>Przesyłka</div><div style={{fontSize:20, fontWeight:700}}>{fmtPLN(shipmentSum)}</div></div></div>
-            <div className="card"><div className="body"><div className="dim" style={{fontSize:12}}>Ubezpieczenie</div><div style={{fontSize:20, fontWeight:700}}>{fmtPLN(insuranceSum)}</div></div></div>
+            <div className="card"><div className="body"><div className="dim" style={{fontSize:12}}>{t('reports.shipments.shipmentLabel')}</div><div style={{fontSize:20, fontWeight:700}}>{formatCurrency(shipmentSum)}</div></div></div>
+            <div className="card"><div className="body"><div className="dim" style={{fontSize:12}}>{t('reports.shipments.insuranceLabel')}</div><div style={{fontSize:20, fontWeight:700}}>{formatCurrency(insuranceSum)}</div></div></div>
           </div>
-          <div style={{marginTop:8}}>Razem: <strong>{fmtPLN(shipTotal)}</strong></div>
+          <div style={{marginTop:8}}>{t('reports.shipments.totalLabel')} <strong>{formatCurrency(shipTotal)}</strong></div>
         </div>
       </div>
 
@@ -377,7 +391,7 @@ export default function ReportsPanel({ jobs, partEvents }){
             <div className="header">{modalData.title}</div>
             <div className="body">
               {modalData.items.length === 0 ? (
-                <div className="dim" style={{textAlign:'center'}}>Brak wyników</div>
+                <div className="dim" style={{textAlign:'center'}}>{t('reports.modal.noResults')}</div>
               ) : (
                 <ul className="modal-list">
                   {modalData.items.map(item => (
@@ -391,7 +405,7 @@ export default function ReportsPanel({ jobs, partEvents }){
               )}
             </div>
             <div className="modal-footer">
-              <button className="btn" onClick={closeModal}>Zamknij</button>
+              <button className="btn" onClick={closeModal}>{t('reports.modal.close')}</button>
             </div>
           </div>
         </div>
@@ -399,3 +413,4 @@ export default function ReportsPanel({ jobs, partEvents }){
     </div>
   )
 }
+

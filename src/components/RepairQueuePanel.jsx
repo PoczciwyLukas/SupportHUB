@@ -1,12 +1,6 @@
 import React, { useMemo } from 'react'
-import { todayISO, uid } from '../utils'
-
-const DISPOSITION_LABELS = {
-  keep: 'pozostaje u mnie',
-  dispose: 'utylizacja',
-  renew: 'odnowienie',
-  return: 'odesłanie do producenta',
-}
+import { getDispositionLabel, todayISO, uid } from '../utils'
+import { useLanguage } from '../i18n.jsx'
 
 const DISPOSITION_ACTIONS = {
   renew: ['ok', 'bad'],
@@ -14,6 +8,7 @@ const DISPOSITION_ACTIONS = {
 }
 
 export default function RepairQueuePanel({ db, setDb, companyId }){
+  const { t, formatDateTime } = useLanguage()
   const repairQueue = useMemo(() => db.repairQueue.filter(r => r.companyId === companyId), [db, companyId])
   const jobMap = useMemo(() => {
     const map = new Map()
@@ -74,23 +69,23 @@ export default function RepairQueuePanel({ db, setDb, companyId }){
 
   return (
     <div className="card">
-      <div className="header">Kolejka części</div>
+      <div className="header">{t('repairQueue.title')}</div>
       <div className="body inventory-table">
         <table>
           <thead>
             <tr>
-              <th>Data</th>
-              <th>Zlecenie</th>
-              <th>Część</th>
-              <th>SKU</th>
-              <th>Ilość</th>
-              <th>Los</th>
-              <th>Akcje</th>
+              <th>{t('repairQueue.columns.date')}</th>
+              <th>{t('repairQueue.columns.job')}</th>
+              <th>{t('repairQueue.columns.part')}</th>
+              <th>{t('repairQueue.columns.sku')}</th>
+              <th>{t('repairQueue.columns.qty')}</th>
+              <th>{t('repairQueue.columns.disposition')}</th>
+              <th>{t('repairQueue.columns.actions')}</th>
             </tr>
           </thead>
           <tbody>
             {repairQueue.length===0 ? (
-              <tr><td colSpan={7} style={{textAlign:'center', padding:'16px'}} className="dim">Kolejka pusta</td></tr>
+              <tr><td colSpan={7} style={{textAlign:'center', padding:'16px'}} className="dim">{t('repairQueue.empty')}</td></tr>
             ) : repairQueue
               .slice()
               .sort((a,b)=> new Date(b.createdAt||0) - new Date(a.createdAt||0))
@@ -98,22 +93,22 @@ export default function RepairQueuePanel({ db, setDb, companyId }){
                 const job = jobMap.get(item.jobId)
                 return (
                   <tr key={item.id}>
-                    <td>{item.createdAt ? new Date(item.createdAt).toLocaleString() : '—'}</td>
+                    <td>{item.createdAt ? (formatDateTime(item.createdAt) || new Date(item.createdAt).toLocaleString()) : '—'}</td>
                     <td>{job ? job.orderNumber : '—'}</td>
                     <td>{item.name}</td>
                     <td>{item.sku}</td>
                     <td>{item.qty}</td>
-                    <td>{DISPOSITION_LABELS[item.disposition] || item.disposition}</td>
+                    <td>{getDispositionLabel(item.disposition, t)}</td>
                     <td>
                       <div className="row-actions">
                         {item.disposition === 'renew' && (
                           <>
-                            <button className="btn" onClick={()=>queueOk(item.id)} disabled={!item.itemId}>OK</button>
-                            <button className="btn danger" onClick={()=>queueBad(item.id)}>BAD</button>
+                            <button className="btn" onClick={()=>queueOk(item.id)} disabled={!item.itemId}>{t('repairQueue.actions.ok')}</button>
+                            <button className="btn danger" onClick={()=>queueBad(item.id)}>{t('repairQueue.actions.bad')}</button>
                           </>
                         )}
                         {item.disposition === 'return' && (
-                          <button className="btn" onClick={()=>queueReturn(item.id)}>Odesłano</button>
+                          <button className="btn" onClick={()=>queueReturn(item.id)}>{t('repairQueue.actions.return')}</button>
                         )}
                       </div>
                     </td>
