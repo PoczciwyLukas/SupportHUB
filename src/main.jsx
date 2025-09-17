@@ -1,11 +1,10 @@
 import React from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.jsx'
-import { LanguageProvider } from './i18n.jsx'
+import ReactDOM from 'react-dom/client'
+import Root from './Root.jsx'
 import './styles.css'
 
-createRoot(document.getElementById('root')).render(
-  <LanguageProvider>
-    <App />
-  </LanguageProvider>
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <Root />
+  </React.StrictMode>
 )
