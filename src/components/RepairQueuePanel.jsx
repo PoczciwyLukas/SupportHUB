@@ -55,11 +55,47 @@ export default function RepairQueuePanel({ db, setDb, companyId }){
       ]
     }
 
+    let jobsUpdate = db.jobs
+    if((action==='ok' || action==='bad' || action==='return') && entry.jobId && entry.itemId){
+      jobsUpdate = db.jobs.map(job => {
+        if(job.id !== entry.jobId) return job
+        const usage = Array.isArray(job.inventoryUsed) ? job.inventoryUsed : []
+        let remaining = qty
+        const updatedUsage = []
+        let changed = false
+        for(const u of usage){
+          if(
+            remaining > 0 &&
+            u.itemId === entry.itemId &&
+            u.disposition === entry.disposition
+          ){
+            const currentQty = Number(u.qty || 0)
+            if(currentQty > remaining){
+              updatedUsage.push({ ...u, qty: currentQty - remaining })
+              remaining = 0
+              changed = true
+            } else if(currentQty === remaining){
+              remaining = 0
+              changed = true
+            } else {
+              remaining -= currentQty
+              changed = true
+            }
+          } else {
+            updatedUsage.push(u)
+          }
+        }
+        if(!changed) return job
+        return { ...job, inventoryUsed: updatedUsage, updatedAt: todayISO() }
+      })
+    }
+
     setDb({
       ...db,
       inventory: inventoryUpdate,
       repairQueue: remainingQueue,
       partEvents: partEventsUpdate,
+      jobs: jobsUpdate,
     })
   }
 
